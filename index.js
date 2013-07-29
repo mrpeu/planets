@@ -47,7 +47,10 @@ window.requestAnimFrame = (function() {
   	init: function( param ){
 
   		this.free = param.free || false;
+
   		this.radius = param.r || 10;
+
+      this.mouseable = param.mouseable || true;
 
   		// speed
   		this.sx = param.sx || random( -0.5, 0.5 ) ;
@@ -95,10 +98,13 @@ window.requestAnimFrame = (function() {
   // Init and go!
   //
 
+  //CANVAS_WIDTH = 640, CANVAS_HEIGHT = 480;
+  CANVAS_WIDTH = window.innerWidth-20, CANVAS_HEIGHT = window.innerHeight-20;
+
   var camera, 
       scene,
       sketch, 
-      renderer = new THREE.WebGLRenderer(),
+      renderer = new THREE.WebGLRenderer({ antialias: true }),
       stars = [],
       currentMap = map[0]
   ;
@@ -106,24 +112,20 @@ window.requestAnimFrame = (function() {
   try{
     
       var
-        container = document.getElementById("container")
+        container = document.body//ElementById("container")
       ;
       
       function init() {
 
 
-        renderer.setSize( 640, 480 );
+        renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
 
         container.appendChild( renderer.domElement );
 
         scene = new THREE.Scene();
 
-        camera = new THREE.PerspectiveCamera( 80, 640/480, 1, 1000 );
+        camera = new THREE.PerspectiveCamera( 80, CANVAS_WIDTH/CANVAS_HEIGHT, 1, 1000 );
         camera.position.z = 500;
-
-        //camera = new THREE.OrthographicCamera( 
-        //  this.width / - 2, this.width / 2, this.height / 2, this.height / - 2, 1, 1000 
-        //);
 
 
         var p; // tmp
@@ -150,21 +152,59 @@ window.requestAnimFrame = (function() {
 
         window.addEventListener('resize', resize.bind(this));
 
+        container.addEventListener('mousemove', mouseMove.bind(this));
+
         render();
 
       };
       
       function resize() {
-
-        camera.left = window.innerWidth / - 2;
-        camera.right = window.innerWidth / 2;
-        camera.top = window.innerHeight / 2;
-        camera.bottom = window.innerHeight / - 2;
-
-        camera.updateProjectionMatrix();
+  
+        CANVAS_WIDTH = window.innerWidth-20, CANVAS_HEIGHT = window.innerHeight-20;
         
-        renderer.setSize( this.width, this.height );
+        renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
       };
+
+        
+      var ray = new THREE.Raycaster();
+      var projector = new THREE.Projector();
+      var directionVector = new THREE.Vector3();
+      function mouseMove( e ) {
+
+            // The following will translate the mouse coordinates into a number
+            // ranging from -1 to 1, where
+            //      x == -1 && y == -1 means top-left, and
+            //      x ==  1 && y ==  1 means bottom right
+            var x = ( e.clientX / CANVAS_WIDTH ) * 2 - 1;
+            var y = -( e.clientY / CANVAS_HEIGHT ) * 2 + 1;
+
+            // Now we set our direction vector to those initial values
+            directionVector.set(x, y, 1);
+
+            // Unproject the vector
+            projector.unprojectVector(directionVector, camera);
+
+            // Substract the vector representing the camera position
+            directionVector.sub(camera.position);
+
+            // Normalize the vector, to avoid large numbers from the
+            // projection and substraction
+            directionVector.normalize();
+
+            // Now our direction vector holds the right numbers!
+            ray.set(camera.position, directionVector);
+
+            var intersects = ray.intersectObjects(scene.children);
+
+
+        if (intersects.length > 0) {
+          console.log('intersect: ' + intersects[0].point.x.toFixed(2) + ', ' + intersects[0].point.y.toFixed(2) + ', ' + intersects[0].point.z.toFixed(2) + ')');
+        }
+        else {
+          //console.log('no intersect');
+        }
+      }
+
     
       function update( ctx ) {
 
@@ -200,3 +240,4 @@ window.requestAnimFrame = (function() {
 
 // next step: http://stemkoski.github.io/Three.js/Mouse-Over.html
 // or http://yomotsu.github.io/threejs-examples/ray_basic/
+// http://www.89a.co.uk/post/39031599634/pudding

@@ -19,7 +19,7 @@
 			"file": "index.html",
 			"settings":
 			{
-				"buffer_size": 753,
+				"buffer_size": 621,
 				"line_ending": "Windows"
 			}
 		},
@@ -27,7 +27,7 @@
 			"file": "index.css",
 			"settings":
 			{
-				"buffer_size": 978,
+				"buffer_size": 935,
 				"line_ending": "Windows"
 			}
 		},
@@ -35,7 +35,7 @@
 			"file": "index.js",
 			"settings":
 			{
-				"buffer_size": 3184,
+				"buffer_size": 4304,
 				"line_ending": "Windows"
 			}
 		}
@@ -43,11 +43,19 @@
 	"build_system": "",
 	"command_palette":
 	{
-		"height": 0.0,
+		"height": 58.0,
 		"selected_items":
 		[
+			[
+				"pack",
+				"Preferences: Browse Packages"
+			],
+			[
+				"packa",
+				"Preferences: Browse Packages"
+			]
 		],
-		"width": 0.0
+		"width": 512.0
 	},
 	"console":
 	{
@@ -138,15 +146,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 753,
+						"buffer_size": 621,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								194,
-								194
+								0,
+								0
 							]
 						],
 						"settings":
@@ -167,15 +175,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 978,
+						"buffer_size": 935,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								978,
-								978
+								0,
+								0
 							]
 						],
 						"settings":
@@ -197,15 +205,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3184,
+						"buffer_size": 4304,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2300,
-								2300
+								0,
+								0
 							]
 						],
 						"settings":
