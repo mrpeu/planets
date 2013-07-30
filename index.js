@@ -44,6 +44,8 @@ window.requestAnimFrame = (function() {
 
   Planet.prototype = {
 
+    planetId: 0,
+
   	init: function( param ){
 
   		this.free = param.free || false;
@@ -67,13 +69,44 @@ window.requestAnimFrame = (function() {
   		else
   			this.material = new THREE.MeshLambertMaterial( { color: 0xFFFFFF, wireframe: true } ) ;
 
-          this.geometry = new THREE.SphereGeometry( this.radius );
-          this.mesh = new THREE.Mesh( this.geometry, this.material );
+      this.geometry = new THREE.SphereGeometry( this.radius );
+      this.mesh = new THREE.Mesh( this.geometry, this.material );
 
   		this.mesh.position.x = param.x || 0;
   		this.mesh.position.y = param.y || 0;
+      scene.add(this.mesh);
 
-  	},
+      this.mesh.glowMesh = this.initGlow( this.mesh );
+
+      this.mesh.planetId = Planet.prototype.planetId++;
+      
+      this.mesh.name = "Planet" + this.mesh.planetId;
+      this.mesh.glowMesh.name = this.mesh.name + "-" + "glowMesh";
+
+    },
+
+    initGlow: function(mesh){
+
+      var matGlow = new THREE.ShaderMaterial( 
+        {
+          uniforms:       
+          { 
+            glowColor: { type: "v3", value: mesh.material.color },
+            intensity: { type: "f", value: 1.0}
+          },
+          vertexShader:   document.getElementById( 'vertexShaderGlow'   ).textContent,
+          fragmentShader: document.getElementById( 'fragmentShaderGlow' ).textContent,
+          side: THREE.BackSide,
+          blending: THREE.AdditiveBlending,
+          transparent: true
+        }
+      );
+      var glowMesh = new THREE.Mesh( mesh.geometry.clone(), matGlow );
+      glowMesh.scale.x = glowMesh.scale.y = glowMesh.scale.z = 1.5;
+      glowMesh.visible = false;
+      mesh.add(glowMesh);
+      return glowMesh;
+    },
 
   	move: function( ctx ){
 
@@ -92,7 +125,7 @@ window.requestAnimFrame = (function() {
   	}
 
   };
-
+  //----------
 
   //----------
   // Init and go!
@@ -105,129 +138,149 @@ window.requestAnimFrame = (function() {
       scene,
       sketch, 
       renderer = new THREE.WebGLRenderer({ antialias: true }),
-      stars = [],
+      stars = [], starsMesh = [],
       currentMap = map[0]
   ;
 
   try{
-    
-      var
-        container = document.body//ElementById("container")
-      ;
       
-      function init() {
+      (function(){
+
+        var
+          container = document.body//ElementById("container")
+        ;
+        
+        function init() {
 
 
-        renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
+          renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
 
-        container.appendChild( renderer.domElement );
+          container.appendChild( renderer.domElement );
 
-        scene = new THREE.Scene();
-
-        camera = new THREE.PerspectiveCamera( 80, CANVAS_WIDTH/CANVAS_HEIGHT, 1, 1000 );
-        camera.position.z = 500;
+          scene = new THREE.Scene();
 
 
-        var p; // tmp
+          // create home
+          var p;
+          stars.push( p = new Planet( currentMap.home ));
+          starsMesh.push( p.mesh );
+          scene.add( p.mesh );
 
-        // create home
-        stars.push( p = new Planet( currentMap.home ));
-        scene.add( p.mesh );
+          // create satellites
+          for (var i = map[0].planets.length - 1; i >= 0; i--) {
 
-        // create satellites
-        for (var i = map[0].planets.length - 1; i >= 0; i--) {
+          	stars.push( p = new Planet( currentMap.planets[i] ) );
+            starsMesh.push( p.mesh );
 
-        	stars.push( p = new Planet( currentMap.planets[i] ) );
-        	scene.add( p.mesh );
+          };
+
+          // set a directional light
+          var directionalLight = new THREE.DirectionalLight( 0xdddddd, 1.75 );
+          directionalLight.position.z = 400;
+          directionalLight.name = "directionalLight";
+          scene.add( directionalLight );
+          
+
+          window.addEventListener('resize', resize.bind(this));
+
+          container.addEventListener('mousemove', mouseMove.bind(this));
+
+
+          camera = new THREE.PerspectiveCamera( 80, CANVAS_WIDTH/CANVAS_HEIGHT, 1, 1000 );
+          camera.position.z = 500;
+
+        };
+        
+        function resize() {
+    
+          CANVAS_WIDTH  = window.innerWidth-20;
+          CANVAS_HEIGHT = window.innerHeight-20;
+          
+          renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
+        };
+
+          
+        var ray = new THREE.Raycaster(),
+          projector = new THREE.Projector(),
+          directionVector = new THREE.Vector3(),
+          starHovered = -1;
+        ;
+        function mouseMove( e ) {
+
+              // The following will translate the mouse coordinates into a number
+              // ranging from -1 to 1, where
+              //      x == -1 && y == -1 means top-left, and
+              //      x ==  1 && y ==  1 means bottom right
+              var x = ( e.clientX / CANVAS_WIDTH ) * 2 - 1;
+              var y = -( e.clientY / CANVAS_HEIGHT ) * 2 + 1;
+
+              // Now we set our direction vector to those initial values
+              directionVector.set(x, y, 1);
+
+              // Unproject the vector
+              projector.unprojectVector(directionVector, camera);
+
+              // Substract the vector representing the camera position
+              directionVector.sub(camera.position);
+
+              // Normalize the vector, to avoid large numbers from the
+              // projection and substraction
+              directionVector.normalize();
+
+              // Now our direction vector holds the right numbers!
+              ray.set(camera.position, directionVector);
+
+              var intersects = ray.intersectObjects(starsMesh);
+
+
+          var _starHovered = starHovered;
+          if (intersects.length > 0) {
+            //console.log('intersect: ' + intersects[0].point.x.toFixed(2) + ', ' + intersects[0].point.y.toFixed(2) + ', ' + intersects[0].point.z.toFixed(2) + ')');
+            console.log( "Intersects " + intersects[0].object.name + " #" + intersects[0].object.planetId);
+
+            starHovered = intersects[0].object.planetId;
+
+            intersects[0].object.glowMesh.visible = true;
+          }
+          else {
+            starHovered = -1;
+          }
+
+          if(_starHovered != starHovered){
+            // find the previously hovered star and unselect it
+            for(i in stars)
+              if(stars[i].mesh.planetId == _starHovered){
+                stars[i].mesh.glowMesh.visible = false;
+                break;
+              }
+          }
+        }
+
+      
+        function update( ctx ) {
+
+          for (var i = stars.length - 1; i >= 0; i--) {
+          	stars[i].move(ctx);
+          }
+        
+        };
+      
+        function render() {
+
+          window.requestAnimFrame( render, this );
+
+          update( this );
+
+          renderer.render( scene, camera );
 
         };
 
-        // set a directional light
-        var directionalLight = new THREE.DirectionalLight( 0xffffff, 2 );
-        directionalLight.position.z = 3;
-        scene.add( directionalLight );
 
-        scene.add( directionalLight );
-        
-
-        window.addEventListener('resize', resize.bind(this));
-
-        container.addEventListener('mousemove', mouseMove.bind(this));
+        init();
 
         render();
 
-      };
-      
-      function resize() {
-  
-        CANVAS_WIDTH = window.innerWidth-20, CANVAS_HEIGHT = window.innerHeight-20;
-        
-        renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
-      };
-
-        
-      var ray = new THREE.Raycaster();
-      var projector = new THREE.Projector();
-      var directionVector = new THREE.Vector3();
-      function mouseMove( e ) {
-
-            // The following will translate the mouse coordinates into a number
-            // ranging from -1 to 1, where
-            //      x == -1 && y == -1 means top-left, and
-            //      x ==  1 && y ==  1 means bottom right
-            var x = ( e.clientX / CANVAS_WIDTH ) * 2 - 1;
-            var y = -( e.clientY / CANVAS_HEIGHT ) * 2 + 1;
-
-            // Now we set our direction vector to those initial values
-            directionVector.set(x, y, 1);
-
-            // Unproject the vector
-            projector.unprojectVector(directionVector, camera);
-
-            // Substract the vector representing the camera position
-            directionVector.sub(camera.position);
-
-            // Normalize the vector, to avoid large numbers from the
-            // projection and substraction
-            directionVector.normalize();
-
-            // Now our direction vector holds the right numbers!
-            ray.set(camera.position, directionVector);
-
-            var intersects = ray.intersectObjects(scene.children);
-
-
-        if (intersects.length > 0) {
-          console.log('intersect: ' + intersects[0].point.x.toFixed(2) + ', ' + intersects[0].point.y.toFixed(2) + ', ' + intersects[0].point.z.toFixed(2) + ')');
-        }
-        else {
-          //console.log('no intersect');
-        }
-      }
-
-    
-      function update( ctx ) {
-
-        for (var i = stars.length - 1; i >= 0; i--) {
-        	stars[i].move(ctx);
-        }
-      
-      };
-    
-      function render() {
-
-        window.requestAnimFrame( render, this );
-
-        update( this );
-
-        renderer.render( scene, camera );
-
-      };
-
-
-      init();
-
-      render();
+      })();
     
    } catch (error) {
      nogl = document.getElementById("nogl");
