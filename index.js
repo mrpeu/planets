@@ -3,8 +3,20 @@
 //----------
 // utils
 
-random = Math.random;
+// src: https://github.com/soulwire/sketch.js/blob/master/js/sketch.js
+random = function( min, max ) {
 
+    if ( Object.prototype.toString.call( min ) == '[object Array]' )
+
+        return min[ ~~( Math.random() * min.length ) ];
+
+    if ( typeof max != 'number' )
+
+        max = min || 1, min = 0;
+
+    return min + Math.random() * ( max - min );
+};
+// src: Paul Irish obv
 window.requestAnimFrame = (function() {
   return window.requestAnimationFrame ||
          window.webkitRequestAnimationFrame ||
@@ -26,7 +38,7 @@ window.requestAnimFrame = (function() {
 
   var map = [{
   	name: "0",
-  	home: { r: 30, mat: { color: 0xFFFFFF} },
+  	home: { r: 30, mat: { color: 0xFFFFFF}, segW: 10, segH: 10 },
   	planets: [
   		{ x: -150, y: 150, r: 20, mat: { color: 0x22DD55 } },		
   		{ x: 200, y: 20, r: 14, mat: { color: 0x2255DD } }
@@ -64,12 +76,15 @@ window.requestAnimFrame = (function() {
   		this.rx = param.rx || 0.001;
   		this.ry = param.ry || 0.002;
 
+      this.segW = param.segW || random( 1, 6 );
+      this.segH = param.segW || random( 1, 6 );
+
   		if(typeof(param.mat)!==undefined)
   			this.material = new THREE.MeshLambertMaterial( param.mat );
   		else
   			this.material = new THREE.MeshLambertMaterial( { color: 0xFFFFFF, wireframe: true } ) ;
 
-      this.geometry = new THREE.SphereGeometry( this.radius );
+      this.geometry = new THREE.SphereGeometry( this.radius, this.segW, this.segH );
       this.mesh = new THREE.Mesh( this.geometry, this.material );
 
   		this.mesh.position.x = param.x || 0;
