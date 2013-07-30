@@ -4,6 +4,26 @@
 		"selected_items":
 		[
 			[
+				"se",
+				"segW"
+			],
+			[
+				"star",
+				"stars"
+			],
+			[
+				"direct",
+				"directionalLight"
+			],
+			[
+				"plane",
+				"Planet"
+			],
+			[
+				"planet",
+				"planetId"
+			],
+			[
 				"_",
 				"_SocketStatus"
 			],
@@ -19,7 +39,7 @@
 			"file": "index.html",
 			"settings":
 			{
-				"buffer_size": 621,
+				"buffer_size": 1564,
 				"line_ending": "Windows"
 			}
 		},
@@ -35,7 +55,7 @@
 			"file": "index.js",
 			"settings":
 			{
-				"buffer_size": 4304,
+				"buffer_size": 8384,
 				"line_ending": "Windows"
 			}
 		}
@@ -106,6 +126,7 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"scene.a",
 			"\\n",
 			"\\n|\\s*",
 			"\\n\\s*",
@@ -137,7 +158,7 @@
 	"groups":
 	[
 		{
-			"selected": 0,
+			"selected": 2,
 			"sheets":
 			[
 				{
@@ -146,15 +167,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 621,
+						"buffer_size": 1564,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								887,
+								887
 							]
 						],
 						"settings":
@@ -205,15 +226,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 4304,
+						"buffer_size": 8384,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								1152,
+								1152
 							]
 						],
 						"settings":
@@ -224,7 +245,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1401.0,
+						"translation.y": 252.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"

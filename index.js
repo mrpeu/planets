@@ -40,8 +40,9 @@ window.requestAnimFrame = (function() {
   	name: "0",
   	home: { r: 30, mat: { color: 0xFFFFFF}, segW: 10, segH: 10 },
   	planets: [
-  		{ x: -150, y: 150, r: 20, mat: { color: 0x22DD55 } },		
-  		{ x: 200, y: 20, r: 14, mat: { color: 0x2255DD } }
+  		{ x: -150, y: 150, r: 20, mat: { color: 0x22DD55 } },   
+      { x: 200, y: 20, r: 14, mat: { color: 0x2255DD } },   
+      { x: -200, y: -200, r: 17, mat: { color: 0xDDEE22 } }
   	]
   }];
 
@@ -107,7 +108,7 @@ window.requestAnimFrame = (function() {
           uniforms:       
           { 
             glowColor: { type: "v3", value: mesh.material.color },
-            intensity: { type: "f", value: 1.0}
+            power: { type: "f", value: 1}
           },
           vertexShader:   document.getElementById( 'vertexShaderGlow'   ).textContent,
           fragmentShader: document.getElementById( 'fragmentShaderGlow' ).textContent,
@@ -116,7 +117,8 @@ window.requestAnimFrame = (function() {
           transparent: true
         }
       );
-      var glowMesh = new THREE.Mesh( mesh.geometry.clone(), matGlow );
+      var geom = new THREE.SphereGeometry(mesh.geometry.radius, 10, 10);
+      var glowMesh = new THREE.Mesh( geom, matGlow );
       glowMesh.scale.x = glowMesh.scale.y = glowMesh.scale.z = 1.5;
       glowMesh.visible = false;
       mesh.add(glowMesh);
@@ -190,7 +192,7 @@ window.requestAnimFrame = (function() {
           };
 
           // set a directional light
-          var directionalLight = new THREE.DirectionalLight( 0xdddddd, 1.75 );
+          var directionalLight = new THREE.DirectionalLight( 0xdddddd, 1.5 );
           directionalLight.position.z = 400;
           directionalLight.name = "directionalLight";
           scene.add( directionalLight );
