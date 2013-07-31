@@ -38,11 +38,14 @@ window.requestAnimFrame = (function() {
 
   var map = [{
   	name: "0",
-  	home: { r: 30, mat: { color: 0xFFFFFF}, segW: 10, segH: 10 },
+  	home: { r: 30, rsx: 0.001, rsy: 0.001,  mat: { color: 0xFFFFFF}, segW: 10, segH: 10 },
   	planets: [
-  		{ x: -150, y: 150, r: 20, mat: { color: 0x22DD55 } },   
+      { x: -150, y: 150, r: 20, mat: { color: 0x22DD55 } },   
       { x: 200, y: 20, r: 14, mat: { color: 0x2255DD } },   
-      { x: -200, y: -200, r: 17, mat: { color: 0xDDEE22 } }
+      { x: -200, y: -200, r: 17, mat: { color: 0xDDEE22 } },
+      { x: 500, y: -300, r: 20, mat: { color: 0x22DD55 } },   
+      { x: -500, y: 100, r: 14, mat: { color: 0x2255DD } },   
+      { x: -200, y: 400, r: 17, mat: { color: 0xDDEE22 } }
   	]
   }];
 
@@ -73,9 +76,12 @@ window.requestAnimFrame = (function() {
   		// acceleration
   		this.ax = param.ax || 0.0;
   		this.ay = param.ay || 0.0;
-  		// rotation speed
-  		this.rx = param.rx || 0.001;
-  		this.ry = param.ry || 0.002;
+      // rotation
+      this.rx = param.rx || random( -0.01, 0.008);
+      this.ry = param.ry || random( -0.01, 0.008);
+      // rotation speed
+      this.rsx = param.rsx || random( -0.01, 0.01);
+      this.rsy = param.rsy || random( -0.01, 0.01);
 
       this.segW = param.segW || random( 1, 6 );
       this.segH = param.segW || random( 1, 6 );
@@ -90,11 +96,15 @@ window.requestAnimFrame = (function() {
 
   		this.mesh.position.x = param.x || 0;
   		this.mesh.position.y = param.y || 0;
+
+      this.mesh.rotation.x = param.rx || 0;
+      this.mesh.rotation.y = param.ry || 0;
+
       scene.add(this.mesh);
 
       this.mesh.glowMesh = this.initGlow( this.mesh );
 
-      this.mesh.planetId = Planet.prototype.planetId++;
+      this.planetId = this.mesh.planetId = Planet.prototype.planetId++;
       
       this.mesh.name = "Planet" + this.mesh.planetId;
       this.mesh.glowMesh.name = this.mesh.name + "-" + "glowMesh";
@@ -117,11 +127,15 @@ window.requestAnimFrame = (function() {
           transparent: true
         }
       );
-      var geom = new THREE.SphereGeometry(mesh.geometry.radius, 10, 10);
+      var geom = new THREE.SphereGeometry(mesh.geometry.radius, 15, 15);
+      //var geom = mesh.geometry.clone();
+
       var glowMesh = new THREE.Mesh( geom, matGlow );
       glowMesh.scale.x = glowMesh.scale.y = glowMesh.scale.z = 1.5;
       glowMesh.visible = false;
+
       mesh.add(glowMesh);
+
       return glowMesh;
     },
 
@@ -136,8 +150,8 @@ window.requestAnimFrame = (function() {
   			this.sy += this.ay;
   		}
 
-      this.mesh.rotation.x += this.rx;
-  		this.mesh.rotation.y += this.ry;
+      this.mesh.rotation.x += this.rsx;
+  		this.mesh.rotation.y += this.rsy;
 
   	}
 
@@ -149,13 +163,14 @@ window.requestAnimFrame = (function() {
   //
 
   //CANVAS_WIDTH = 640, CANVAS_HEIGHT = 480;
-  CANVAS_WIDTH = window.innerWidth-20, CANVAS_HEIGHT = window.innerHeight-20;
+  CANVAS_WIDTH = window.innerWidth-5,
+   CANVAS_HEIGHT = window.innerHeight-5;
 
   var camera, 
       scene,
       sketch, 
       renderer = new THREE.WebGLRenderer({ antialias: true }),
-      stars = [], starsMesh = [],
+      stars = [],
       currentMap = map[0]
   ;
 
@@ -180,14 +195,12 @@ window.requestAnimFrame = (function() {
           // create home
           var p;
           stars.push( p = new Planet( currentMap.home ));
-          starsMesh.push( p.mesh );
           scene.add( p.mesh );
 
           // create satellites
           for (var i = map[0].planets.length - 1; i >= 0; i--) {
 
           	stars.push( p = new Planet( currentMap.planets[i] ) );
-            starsMesh.push( p.mesh );
 
           };
 
@@ -203,74 +216,72 @@ window.requestAnimFrame = (function() {
           container.addEventListener('mousemove', mouseMove.bind(this));
 
 
-          camera = new THREE.PerspectiveCamera( 80, CANVAS_WIDTH/CANVAS_HEIGHT, 1, 1000 );
-          camera.position.z = 500;
-
+          var width = CANVAS_WIDTH,
+              height = CANVAS_HEIGHT;
+          camera = new THREE.OrthographicCamera( CANVAS_WIDTH / - 2, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_HEIGHT / - 2, -100, 600 );
         };
         
         function resize() {
     
-          CANVAS_WIDTH  = window.innerWidth-20;
-          CANVAS_HEIGHT = window.innerHeight-20;
-          
+          CANVAS_WIDTH  = window.innerWidth-5;
+          CANVAS_HEIGHT = window.innerHeight-5;          
           renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
+
+          camera.left = CANVAS_WIDTH / - 2;
+          camera.right = CANVAS_WIDTH / 2;
+          camera.top = CANVAS_HEIGHT / 2;
+          camera.bottom = CANVAS_HEIGHT / - 2;
+          camera.updateProjectionMatrix();
+
         };
 
           
         var ray = new THREE.Raycaster(),
           projector = new THREE.Projector(),
           directionVector = new THREE.Vector3(),
-          starHovered = -1;
+          starsHovered = []; // id of the star currently hovered
         ;
         function mouseMove( e ) {
 
-              // The following will translate the mouse coordinates into a number
-              // ranging from -1 to 1, where
-              //      x == -1 && y == -1 means top-left, and
-              //      x ==  1 && y ==  1 means bottom right
-              var x = ( e.clientX / CANVAS_WIDTH ) * 2 - 1;
-              var y = -( e.clientY / CANVAS_HEIGHT ) * 2 + 1;
+          var x = e.clientX - CANVAS_WIDTH/2,
+              y = -e.clientY + CANVAS_HEIGHT/2,
+              mouseVec3 = new THREE.Vector3(x, y, 0),
+              _starsHovered = starsHovered,
+              // loop vars
+              star, d, r
+          ;
 
-              // Now we set our direction vector to those initial values
-              directionVector.set(x, y, 1);
+          starsHovered = [];
 
-              // Unproject the vector
-              projector.unprojectVector(directionVector, camera);
+          for(i in stars){
+            star = stars[i];
+            d = star.mesh.position.distanceTo(mouseVec3);
+            r = star.geometry.boundingSphere.radius;
 
-              // Substract the vector representing the camera position
-              directionVector.sub(camera.position);
-
-              // Normalize the vector, to avoid large numbers from the
-              // projection and substraction
-              directionVector.normalize();
-
-              // Now our direction vector holds the right numbers!
-              ray.set(camera.position, directionVector);
-
-              var intersects = ray.intersectObjects(starsMesh);
-
-
-          var _starHovered = starHovered;
-          if (intersects.length > 0) {
-            //console.log('intersect: ' + intersects[0].point.x.toFixed(2) + ', ' + intersects[0].point.y.toFixed(2) + ', ' + intersects[0].point.z.toFixed(2) + ')');
-            console.log( "Intersects " + intersects[0].object.name + " #" + intersects[0].object.planetId);
-
-            starHovered = intersects[0].object.planetId;
-
-            intersects[0].object.glowMesh.visible = true;
-          }
-          else {
-            starHovered = -1;
+            if( d < r )
+            {
+              starsHovered.push(star.planetId);
+            }
           }
 
-          if(_starHovered != starHovered){
-            // find the previously hovered star and unselect it
-            for(i in stars)
-              if(stars[i].mesh.planetId == _starHovered){
-                stars[i].mesh.glowMesh.visible = false;
-                break;
-              }
+          if (starsHovered.length > 0) {
+            for(i in starsHovered){
+
+              star = stars[starsHovered[i]];
+              star.mesh.glowMesh.visible = true;
+
+            }
           }
+
+          for(i in _starsHovered)
+          {
+            if(starsHovered.indexOf( _starsHovered[i] ) < 0)
+            {
+              stars[_starsHovered[i]].mesh.glowMesh.visible = false;
+              break;
+            }
+          }
+
         }
 
       

@@ -1,7 +1,7 @@
 
 html, body {
   font-family: 'Play', sans-serif;
-  background: #2b2b2b;
+  background: #222;
   margin: 0;
 }
 
@@ -53,6 +53,10 @@ article {
 
 #container {
   color: #ddd;
+}
+
+canvas {
+  background: radial-gradient(#222, #111);
 }
 
 #nogl{
