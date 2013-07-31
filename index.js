@@ -38,7 +38,7 @@ window.requestAnimFrame = (function() {
 
   var map = [{
   	name: "0",
-  	home: { r: 30, rsx: 0.001, rsy: 0.001,  mat: { name: "home", color: 0x22EF66 }, segW: 50, segH: 50 },
+  	home: { r: 70, rsx: 0.001, rsy: 0.001,  mat: { name: "home", color: 0x22EF66 }, segW: 50, segH: 50 },
   	planets: [
       { x: -150, y: 150, r: 20, mat: { color: 0x77DD55 } },   
       { x:  200, y:  20, r: 14, mat: { color: 0x77DD55 } },   
@@ -83,8 +83,8 @@ window.requestAnimFrame = (function() {
       this.rsx = param.rsx || random( -0.01, 0.01);
       this.rsy = param.rsy || random( -0.01, 0.01);
 
-      this.segW = param.segW || random( 1, 7 );
-      this.segH = param.segW || random( 1, 7 );
+      this.segW = param.segW || random( 5, 10 );
+      this.segH = param.segW || random( 5, 10 );
 
   		if(typeof(param.mat)!==undefined){
         if(param.mat.name == "home"){
@@ -353,6 +353,13 @@ window.requestAnimFrame = (function() {
   }
 
 })();
+
+
+
+
+
+
+
 
 // next step: http://stemkoski.github.io/Three.js/Mouse-Over.html
 // or http://yomotsu.github.io/threejs-examples/ray_basic/

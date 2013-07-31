@@ -41,7 +41,7 @@
   void main() 
   {
     float intensity = pow( 0.5 - dot( vNormal, vec3( 0.0, 0.0, 1.0 ) ), 4.0 ); 
-      gl_FragColor = vec4( 0.8, 0.8, 0.8, 0.2 ) * intensity;
+    gl_FragColor = vec4( 0.8, 0.8, 0.8, 0.2 ) * intensity;
   }
   </script>
 
@@ -245,7 +245,7 @@
         // get a turbulent 3d noise using the normal, normal to high freq
         noise = 10.0 *  -.10 * turbulence( .5 * normal );
         // get a 3d noise using the position, low frequency
-        float b = 5.0 * pnoise( 0.05 * position, vec3( 100.0 ) );
+        float b = 5.0 * pnoise( 0.05 * position, vec3( 10.0 ) );
         // compose both noises
         float displacement = - 10. * noise + b;
          
@@ -267,7 +267,8 @@
       // compose the colour using the UV coordinate
       // and modulate it with the noise like ambient occlusion
       // vec3 col = vec3( color * ( 1. - 2. * noise ) );
-      vec3 col = vec3( 0.1, 1.0-1.0*noise, 2.0*noise );
+      float f = 0.9;
+      vec3 col = vec3( 0.0, f-f*noise, 2.0*f*noise );
 
       gl_FragColor = vec4( col, 1.0 );
 
