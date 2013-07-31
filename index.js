@@ -38,14 +38,14 @@ window.requestAnimFrame = (function() {
 
   var map = [{
   	name: "0",
-  	home: { r: 30, rsx: 0.001, rsy: 0.001,  mat: { color: 0xFFFFFF}, segW: 10, segH: 10 },
+  	home: { r: 30, rsx: 0.001, rsy: 0.001,  mat: { name: "home", color: 0x22EF66 }, segW: 10, segH: 10 },
   	planets: [
-      { x: -150, y: 150, r: 20, mat: { color: 0x22DD55 } },   
-      { x: 200, y: 20, r: 14, mat: { color: 0x2255DD } },   
-      { x: -200, y: -200, r: 17, mat: { color: 0xDDEE22 } },
-      { x: 500, y: -300, r: 20, mat: { color: 0x22DD55 } },   
-      { x: -500, y: 100, r: 14, mat: { color: 0x2255DD } },   
-      { x: -200, y: 400, r: 17, mat: { color: 0xDDEE22 } }
+      { x: -150, y: 150, r: 20, mat: { color: 0x77DD55 } },   
+      { x:  200, y:  20, r: 14, mat: { color: 0x77DD55 } },   
+      { x: -200, y: -200, r: 17,mat: { color: 0xDDEE22 } },
+      { x: -200, y: 400, r: 17, mat: { color: 0xDDEE22 } },
+      { x: 500, y: -300, r: 20, mat: { color: 0x7755DD } },   
+      { x: -500, y: 100, r: 14, mat: { color: 0x7755DD } }
   	]
   }];
 
@@ -83,11 +83,24 @@ window.requestAnimFrame = (function() {
       this.rsx = param.rsx || random( -0.01, 0.01);
       this.rsy = param.rsy || random( -0.01, 0.01);
 
-      this.segW = param.segW || random( 1, 6 );
-      this.segH = param.segW || random( 1, 6 );
+      this.segW = param.segW || random( 1, 7 );
+      this.segH = param.segW || random( 1, 7 );
 
-  		if(typeof(param.mat)!==undefined)
-  			this.material = new THREE.MeshLambertMaterial( param.mat );
+  		if(typeof(param.mat)!==undefined){
+        if(param.mat.name == "home"){
+          this.material = new THREE.ShaderMaterial({
+            uniforms:       
+            { 
+              color: { type: "c", value: new THREE.Color( param.mat.color ) },
+            },
+            vertexShader: document.getElementById('vsHome').textContent,
+            fragmentShader: document.getElementById('fsHome').textContent
+          });
+        }else{
+          param.mat.ambient =  param.mat.color;
+    			this.material = new THREE.MeshLambertMaterial( param.mat );
+        }
+      }
   		else
   			this.material = new THREE.MeshLambertMaterial( { color: 0xFFFFFF, wireframe: true } ) ;
 
@@ -120,8 +133,8 @@ window.requestAnimFrame = (function() {
             glowColor: { type: "v3", value: mesh.material.color },
             power: { type: "f", value: 1}
           },
-          vertexShader:   document.getElementById( 'vertexShaderGlow'   ).textContent,
-          fragmentShader: document.getElementById( 'fragmentShaderGlow' ).textContent,
+          vertexShader:   document.getElementById( 'vsGlow' ).textContent,
+          fragmentShader: document.getElementById( 'fsGlow' ).textContent,
           side: THREE.BackSide,
           blending: THREE.AdditiveBlending,
           transparent: true
@@ -137,6 +150,19 @@ window.requestAnimFrame = (function() {
       mesh.add(glowMesh);
 
       return glowMesh;
+    },
+
+    knead: function(max){
+
+      var v,
+          hmax = max/2
+      ;
+
+      this.geometry.vertices.forEach(function(v) {
+        //return v[["x", "y", "z"][~~(Math.random() * 3)]] += Math.random() * 10;
+
+      });
+
     },
 
   	move: function( ctx ){
@@ -162,14 +188,11 @@ window.requestAnimFrame = (function() {
   // Init and go!
   //
 
-  //CANVAS_WIDTH = 640, CANVAS_HEIGHT = 480;
-  CANVAS_WIDTH = window.innerWidth-5,
-   CANVAS_HEIGHT = window.innerHeight-5;
-
-  var camera, 
+  var CANVAS_WIDTH, CANVAS_HEIGHT,
+      camera, 
       scene,
       sketch, 
-      renderer = new THREE.WebGLRenderer({ antialias: true }),
+      renderer,
       stars = [],
       currentMap = map[0]
   ;
@@ -179,11 +202,18 @@ window.requestAnimFrame = (function() {
       (function(){
 
         var
-          container = document.body//ElementById("container")
+          container = document.body;//getElementById("container")
         ;
         
         function init() {
 
+          //CANVAS_WIDTH = 640, CANVAS_HEIGHT = 480;
+          CANVAS_WIDTH = window.innerWidth-5;
+          CANVAS_HEIGHT = window.innerHeight-5;
+          //CANVAS_WIDTH = container.clientWidth;
+          //CANVAS_HEIGHT = container.clientHeight;
+
+          renderer = new THREE.WebGLRenderer({ antialias: true });
 
           renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
 
@@ -195,6 +225,7 @@ window.requestAnimFrame = (function() {
           // create home
           var p;
           stars.push( p = new Planet( currentMap.home ));
+          p.knead(2);
           scene.add( p.mesh );
 
           // create satellites
@@ -205,10 +236,14 @@ window.requestAnimFrame = (function() {
           };
 
           // set a directional light
-          var directionalLight = new THREE.DirectionalLight( 0xdddddd, 1.5 );
+          var directionalLight = new THREE.DirectionalLight( 0xdddddd, 1 );
           directionalLight.position.z = 400;
           directionalLight.name = "directionalLight";
           scene.add( directionalLight );
+
+          var ambientLight = new THREE.AmbientLight( 0x444444 );
+          ambientLight.name = "ambientLight";
+          //scene.add(ambientLight);
           
 
           window.addEventListener('resize', resize.bind(this));
@@ -321,4 +356,4 @@ window.requestAnimFrame = (function() {
 
 // next step: http://stemkoski.github.io/Three.js/Mouse-Over.html
 // or http://yomotsu.github.io/threejs-examples/ray_basic/
-// http://www.89a.co.uk/post/39031599634/pudding
+// http://www.89a.co.uk/page/14
