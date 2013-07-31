@@ -266,7 +266,9 @@
       
       // compose the colour using the UV coordinate
       // and modulate it with the noise like ambient occlusion
-      vec3 col = vec3( color * ( 1. - 2. * noise ) );
+      // vec3 col = vec3( color * ( 1. - 2. * noise ) );
+      vec3 col = vec3( 0.1, 1.0-1.0*noise, 2.0*noise );
+
       gl_FragColor = vec4( col, 1.0 );
 
   }

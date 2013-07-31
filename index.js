@@ -38,7 +38,7 @@ window.requestAnimFrame = (function() {
 
   var map = [{
   	name: "0",
-  	home: { r: 30, rsx: 0.001, rsy: 0.001,  mat: { name: "home", color: 0x22EF66 }, segW: 10, segH: 10 },
+  	home: { r: 30, rsx: 0.001, rsy: 0.001,  mat: { name: "home", color: 0x22EF66 }, segW: 50, segH: 50 },
   	planets: [
       { x: -150, y: 150, r: 20, mat: { color: 0x77DD55 } },   
       { x:  200, y:  20, r: 14, mat: { color: 0x77DD55 } },   
