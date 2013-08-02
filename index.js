@@ -38,13 +38,13 @@ window.requestAnimFrame = (function() {
 
   var map = [{
   	name: "0",
-  	home: { r: 70, rsx: 0.001, rsy: 0.001,  mat: { name: "home", color: 0x22EF66 }, segW: 50, segH: 50 },
+  	home: { r: 40, rsx: 0.001, rsy: 0.001,  mat: { name: "home", color: 0x22EF66 }, segW: 50, segH: 50 },
   	planets: [
       { x: -150, y: 150, r: 20, mat: { color: 0x77DD55 } },   
       { x:  200, y:  20, r: 14, mat: { color: 0x77DD55 } },   
       { x: -200, y: -200, r: 17,mat: { color: 0xDDEE22 } },
       { x: -200, y: 400, r: 17, mat: { color: 0xDDEE22 } },
-      { x: 500, y: -300, r: 20, mat: { color: 0x7755DD } },   
+      { x: 500, y: -250, r: 20, mat: { color: 0x7755DD } },   
       { x: -500, y: 100, r: 14, mat: { color: 0x7755DD } }
   	]
   }];
@@ -55,133 +55,123 @@ window.requestAnimFrame = (function() {
   //
 
   function Planet( param ) {
-  	this.init( param );
+    this.init( param || {} );
   }
 
-  Planet.prototype = {
+  Planet.prototype.planetId = 0;
 
-    planetId: 0,
+  Planet.prototype.init = function( param ){
 
-  	init: function( param ){
+		this.free = param.free || false;
 
-  		this.free = param.free || false;
+		this.radius = param.r || 10;
 
-  		this.radius = param.r || 10;
+    this.mouseable = param.mouseable || true;
 
-      this.mouseable = param.mouseable || true;
+		// speed
+		this.sx = param.sx || random( -0.5, 0.5 ) ;
+		this.sy = param.sy || random( -0.5, 0.5 );
+		// acceleration
+		this.ax = param.ax || 0.0;
+		this.ay = param.ay || 0.0;
+    // rotation
+    this.rx = param.rx || random( -0.01, 0.008);
+    this.ry = param.ry || random( -0.01, 0.008);
+    // rotation speed
+    this.rsx = param.rsx || random( -0.01, 0.01);
+    this.rsy = param.rsy || random( -0.01, 0.01);
 
-  		// speed
-  		this.sx = param.sx || random( -0.5, 0.5 ) ;
-  		this.sy = param.sy || random( -0.5, 0.5 );
-  		// acceleration
-  		this.ax = param.ax || 0.0;
-  		this.ay = param.ay || 0.0;
-      // rotation
-      this.rx = param.rx || random( -0.01, 0.008);
-      this.ry = param.ry || random( -0.01, 0.008);
-      // rotation speed
-      this.rsx = param.rsx || random( -0.01, 0.01);
-      this.rsy = param.rsy || random( -0.01, 0.01);
+    this.segW = param.segW || random( 5, 10 );
+    this.segH = param.segW || random( 5, 10 );
 
-      this.segW = param.segW || random( 5, 10 );
-      this.segH = param.segW || random( 5, 10 );
-
-  		if(typeof(param.mat)!==undefined){
-        if(param.mat.name == "home"){
-          this.material = new THREE.ShaderMaterial({
-            uniforms:       
-            { 
-              color: { type: "c", value: new THREE.Color( param.mat.color ) },
-            },
-            vertexShader: document.getElementById('vsHome').textContent,
-            fragmentShader: document.getElementById('fsHome').textContent
-          });
-        }else{
-          param.mat.ambient =  param.mat.color;
-    			this.material = new THREE.MeshLambertMaterial( param.mat );
-        }
-      }
-  		else
-  			this.material = new THREE.MeshLambertMaterial( { color: 0xFFFFFF, wireframe: true } ) ;
-
-      this.geometry = new THREE.SphereGeometry( this.radius, this.segW, this.segH );
-      this.mesh = new THREE.Mesh( this.geometry, this.material );
-
-  		this.mesh.position.x = param.x || 0;
-  		this.mesh.position.y = param.y || 0;
-
-      this.mesh.rotation.x = param.rx || 0;
-      this.mesh.rotation.y = param.ry || 0;
-
-      scene.add(this.mesh);
-
-      this.mesh.glowMesh = this.initGlow( this.mesh );
-
-      this.planetId = this.mesh.planetId = Planet.prototype.planetId++;
-      
-      this.mesh.name = "Planet" + this.mesh.planetId;
-      this.mesh.glowMesh.name = this.mesh.name + "-" + "glowMesh";
-
-    },
-
-    initGlow: function(mesh){
-
-      var matGlow = new THREE.ShaderMaterial( 
-        {
+		if(typeof(param.mat)!=='undefined'){
+      if(param.mat.name == "home"){
+        this.material = new THREE.ShaderMaterial({
           uniforms:       
           { 
-            glowColor: { type: "v3", value: mesh.material.color },
-            power: { type: "f", value: 1}
+            color: { type: "c", value: new THREE.Color( param.mat.color ) },
           },
-          vertexShader:   document.getElementById( 'vsGlow' ).textContent,
-          fragmentShader: document.getElementById( 'fsGlow' ).textContent,
-          side: THREE.BackSide,
-          blending: THREE.AdditiveBlending,
-          transparent: true
-        }
-      );
-      var geom = new THREE.SphereGeometry(mesh.geometry.radius, 15, 15);
-      //var geom = mesh.geometry.clone();
+          vertexShader: document.getElementById('vsHome').textContent,
+          fragmentShader: document.getElementById('fsHome').textContent
+        });
+      }else{
+        param.mat.ambient =  param.mat.color;
+  			this.material = new THREE.MeshLambertMaterial( param.mat );
+      }
+    }
+		else
+			this.material = new THREE.MeshLambertMaterial( { color: 0xFFFFFF, wireframe: true } ) ;
 
-      var glowMesh = new THREE.Mesh( geom, matGlow );
-      glowMesh.scale.x = glowMesh.scale.y = glowMesh.scale.z = 1.5;
-      glowMesh.visible = false;
+    this.geometry = new THREE.SphereGeometry( this.radius, this.segW, this.segH );
+    this.mesh = new THREE.Mesh( this.geometry, this.material );
 
-      mesh.add(glowMesh);
+		this.mesh.position.x = param.x || 0;
+		this.mesh.position.y = param.y || 0;
 
-      return glowMesh;
-    },
+    this.mesh.rotation.x = param.rx || 0;
+    this.mesh.rotation.y = param.ry || 0;
 
-    knead: function(max){
+    this.mesh.glowMesh = this.initGlow( this.mesh );
 
-      var v,
-          hmax = max/2
-      ;
-
-      this.geometry.vertices.forEach(function(v) {
-        //return v[["x", "y", "z"][~~(Math.random() * 3)]] += Math.random() * 10;
-
-      });
-
-    },
-
-  	move: function( ctx ){
-
-  		if(this.free){
-
-  			this.mesh.position.x += this.sx;
-  			this.mesh.position.y += this.sy;
-
-  			this.sx += this.ax;
-  			this.sy += this.ay;
-  		}
-
-      this.mesh.rotation.x += this.rsx;
-  		this.mesh.rotation.y += this.rsy;
-
-  	}
+    this.planetId = this.mesh.planetId = Planet.prototype.planetId++;
+    
+    this.mesh.name = "Planet" + this.planetId;
+    this.mesh.glowMesh.name = this.mesh.name + "-" + "glowMesh";
 
   };
+
+
+  Planet.prototype.initGlow = function(mesh){
+
+    var matGlow = new THREE.ShaderMaterial( 
+      {
+        uniforms:       
+        { 
+          glowColor: { type: "v3", value: mesh.material.color },
+          power: { type: "f", value: 1}
+        },
+        vertexShader:   document.getElementById( 'vsGlow' ).textContent,
+        fragmentShader: document.getElementById( 'fsGlow' ).textContent,
+        side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
+        transparent: true
+      }
+    );
+    var geom = new THREE.SphereGeometry(mesh.geometry.radius, 15, 15);
+    //var geom = mesh.geometry.clone();
+
+    var glowMesh = new THREE.Mesh( geom, matGlow );
+    glowMesh.scale.x = glowMesh.scale.y = glowMesh.scale.z = 1.5;
+    glowMesh.visible = false;
+
+    mesh.add(glowMesh);
+
+    return glowMesh;
+  };
+
+	Planet.prototype.move = function( ctx ){
+
+		if(this.free){
+
+			this.mesh.position.x += this.sx;
+			this.mesh.position.y += this.sy;
+
+			this.sx += this.ax;
+			this.sy += this.ay;
+		}
+
+    this.mesh.rotation.x += this.rsx;
+		this.mesh.rotation.y += this.rsy;
+
+	};
+
+
+  function PlanetGold(){
+
+  }
+
+  PlanetGold.prototype = new Planet();
+
   //----------
 
   //----------
@@ -225,13 +215,17 @@ window.requestAnimFrame = (function() {
           // create home
           var p;
           stars.push( p = new Planet( currentMap.home ));
-          p.knead(2);
           scene.add( p.mesh );
+
+          console.log("Created " + p.mesh.name + " #" + p.planetId + ". proto=#" + Planet.prototype.planetId);
 
           // create satellites
           for (var i = map[0].planets.length - 1; i >= 0; i--) {
 
           	stars.push( p = new Planet( currentMap.planets[i] ) );
+            scene.add(p.mesh);
+
+          console.log("Created " + p.mesh.name + " #" + p.planetId + ". proto=#" + Planet.prototype.planetId);
 
           };
 
@@ -296,24 +290,23 @@ window.requestAnimFrame = (function() {
             if( d < r )
             {
               starsHovered.push(star.planetId);
-            }
-          }
-
-          if (starsHovered.length > 0) {
-            for(i in starsHovered){
-
-              star = stars[starsHovered[i]];
               star.mesh.glowMesh.visible = true;
-
             }
           }
 
-          for(i in _starsHovered)
-          {
-            if(starsHovered.indexOf( _starsHovered[i] ) < 0)
-            {
-              stars[_starsHovered[i]].mesh.glowMesh.visible = false;
-              break;
+          if(_starsHovered.length>0)
+          for(i in stars){
+            var star = stars[i];
+
+            for(j in _starsHovered){
+              var _starId = _starsHovered[j];
+
+              if(star.planetId == _starId)
+              if(starsHovered.indexOf( star.planetId ) < 0)
+              {
+                star.mesh.glowMesh.visible = false;
+                break;
+              }
             }
           }
 
