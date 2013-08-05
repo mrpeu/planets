@@ -73,8 +73,10 @@ window.requestAnimFrame = (function() {
 		else
 			this.material = new THREE.MeshLambertMaterial( { color: 0xFFFFFF, wireframe: true } ) ;
 
-    this.geometry = new THREE.SphereGeometry( this.radius, this.segW, this.segH );
-    this.mesh = new THREE.Mesh( this.geometry, this.material );
+    var geometry = new THREE.SphereGeometry( this.radius, this.segW, this.segH );
+    geometry.mergeVertices();
+
+    this.mesh = new THREE.Mesh( geometry, this.material );
 
 		this.mesh.position.x = param.x || 0;
 		this.mesh.position.y = param.y || 0;
@@ -84,13 +86,16 @@ window.requestAnimFrame = (function() {
 
     this.mesh.glowMesh = this.initGlow( this.mesh );
 
+    param.knead = param.knead || .5;
+
+    this.knead( param.knead );
+
     this.planetId = this.mesh.planetId = Planet.prototype.planetId++;
     
     this.mesh.name = "Planet" + this.planetId;
     this.mesh.glowMesh.name = this.mesh.name + "-" + "glowMesh";
 
   };
-
 
   Planet.prototype.initGlow = function(mesh){
 
@@ -108,7 +113,7 @@ window.requestAnimFrame = (function() {
         transparent: true
       }
     );
-    var geom = new THREE.SphereGeometry(mesh.geometry.radius, 15, 15);
+    var geom = new THREE.SphereGeometry(mesh.geometry.radius, 30, 30);
     //var geom = mesh.geometry.clone();
 
     var glowMesh = new THREE.Mesh( geom, matGlow );
@@ -135,6 +140,25 @@ window.requestAnimFrame = (function() {
 		this.mesh.rotation.y += this.rsy;
 
 	};
+
+  Planet.prototype.knead = function( min, max ){
+
+    if( min == undefined ) return;
+
+    if( max == undefined ){
+      var d = Math.abs(min-1)/2;
+      max = 1 + d;
+      min = 1 - d;
+    }
+
+    var ray;
+
+    this.mesh.geometry.vertices.forEach(function(v){
+
+      v.multiplyScalar( random( min, max ) );
+
+    }, this.mesh);
+  }
 
 
   function PlanetYellow( param ){
@@ -183,7 +207,7 @@ window.requestAnimFrame = (function() {
 
   var map = [{
     name: "0",
-    home: new Planet({ radius: 50, rsx: 0.001, rsy: 0.001,  mat: { color: 0x77FF55 }, segW: 10, segH: 10 }),
+    home: new Planet({ radius: 30, rsx: 0.001, rsy: 0.001,  mat: { color: 0x77FF55, shading: THREE.FlatShading }, segW: 10, segH: 10 }),
     planets: [
       new PlanetRed({ x: -150, y: 150 }),
       new PlanetRed({ x:  200, y:  20 }),
@@ -248,6 +272,19 @@ window.requestAnimFrame = (function() {
 
           };
 
+/*
+          // set a hemisphere light
+          var hemiLight = new THREE.HemisphereLight( 0xffffff, 0xdddddd, .6 );
+          scene.add( hemiLight );
+*/
+/*
+          // set a directional light
+          var directionalLight = new THREE.DirectionalLight( 0xdddddd, 1 );
+          directionalLight.position.z = 1000;
+          directionalLight.name = "directionalLight";
+          scene.add( directionalLight );
+*/
+ 
           // set point lights
           var lightZ = 500, lightXY = 750, lightColor = 0xFFFFFF, lightIntensity = .6, lightDistance = undefined;
 
@@ -255,6 +292,7 @@ window.requestAnimFrame = (function() {
           pointLight0.position.set( -lightXY, lightXY, lightZ );
           pointLight0.name = "pointLight0";
           scene.add( pointLight0 );
+ 
           var pointLight1 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
           pointLight1.position.set( lightXY, lightXY, lightZ );
           pointLight1.name = "pointLight0";
@@ -267,7 +305,6 @@ window.requestAnimFrame = (function() {
           pointLight3.position.set( -lightXY, -lightXY, lightZ );
           pointLight3.name = "pointLight3";
           scene.add( pointLight3 );
-
 
 
 
@@ -322,7 +359,7 @@ window.requestAnimFrame = (function() {
           for(i in stars){
             star = stars[i];
             d = star.mesh.position.distanceTo(mouseVec3);
-            r = star.geometry.boundingSphere.radius;
+            r = star.mesh.geometry.boundingSphere.radius;
 
             if( d < r )
             {

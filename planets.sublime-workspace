@@ -4,6 +4,14 @@
 		"selected_items":
 		[
 			[
+				"ge",
+				"geometry"
+			],
+			[
+				"proto",
+				"prototype"
+			],
+			[
 				"se",
 				"segW"
 			],
@@ -39,7 +47,7 @@
 			"file": "index.html",
 			"settings":
 			{
-				"buffer_size": 1564,
+				"buffer_size": 1160,
 				"line_ending": "Windows"
 			}
 		},
@@ -47,7 +55,7 @@
 			"file": "index.css",
 			"settings":
 			{
-				"buffer_size": 935,
+				"buffer_size": 987,
 				"line_ending": "Windows"
 			}
 		},
@@ -55,7 +63,7 @@
 			"file": "index.js",
 			"settings":
 			{
-				"buffer_size": 8384,
+				"buffer_size": 11282,
 				"line_ending": "Windows"
 			}
 		}
@@ -63,7 +71,7 @@
 	"build_system": "",
 	"command_palette":
 	{
-		"height": 58.0,
+		"height": 392.0,
 		"selected_items":
 		[
 			[
@@ -75,7 +83,7 @@
 				"Preferences: Browse Packages"
 			]
 		],
-		"width": 512.0
+		"width": 416.0
 	},
 	"console":
 	{
@@ -126,6 +134,10 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"this.geometr",
+			"500",
+			"\n  //---------\n  // Map\n  //\n",
+			"', '",
 			"scene.a",
 			"\\n",
 			"\\n|\\s*",
@@ -145,6 +157,8 @@
 		"regex": true,
 		"replace_history":
 		[
+			"lightXY",
+			": undefined, ",
 			"\"+\\n\"",
 			"",
 			"\\r\\n"
@@ -167,15 +181,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1564,
+						"buffer_size": 1160,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								887,
-								887
+								591,
+								590
 							]
 						],
 						"settings":
@@ -185,7 +199,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 14.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -196,7 +210,7 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 935,
+						"buffer_size": 987,
 						"regions":
 						{
 						},
@@ -215,7 +229,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1.0,
+						"translation.y": 43.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -226,15 +240,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 8384,
+						"buffer_size": 11282,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1152,
-								1152
+								3799,
+								3799
 							]
 						],
 						"settings":
@@ -245,7 +259,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 252.0,
+						"translation.y": 1652.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -300,11 +314,15 @@
 	},
 	"select_project":
 	{
-		"height": 0.0,
+		"height": 500.0,
 		"selected_items":
 		[
+			[
+				"",
+				"C:\\Users\\gpe\\Documents\\default.sublime-project"
+			]
 		],
-		"width": 0.0
+		"width": 380.0
 	},
 	"select_symbol":
 	{
