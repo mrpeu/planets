@@ -38,12 +38,12 @@ window.requestAnimFrame = (function() {
 
   var map = [{
   	name: "0",
-  	home: { r: 40, rsx: 0.001, rsy: 0.001,  mat: { name: "home", color: 0x22EF66 }, segW: 50, segH: 50 },
+  	home: { r: 40, rsx: 0.001, rsy: 0.001,  mat: { name: "home", color: 0x77FF55 }, segW: 10, segH: 10 },
   	planets: [
-      { x: -150, y: 150, r: 20, mat: { color: 0x77DD55 } },   
-      { x:  200, y:  20, r: 14, mat: { color: 0x77DD55 } },   
-      { x: -200, y: -200, r: 17,mat: { color: 0xDDEE22 } },
-      { x: -200, y: 400, r: 17, mat: { color: 0xDDEE22 } },
+      { x: -150, y: 150, r: 20, mat: { color: 0xA55000 } },   
+      { x:  200, y:  20, r: 14, mat: { color: 0xA55000 } },   
+      { x: -200, y: -200, r: 17,mat: { color: 0xFFDD22 } },
+      { x: 150, y: 200, r: 17, mat: { color: 0xFFDD22 } },
       { x: 500, y: -250, r: 20, mat: { color: 0x7755DD } },   
       { x: -500, y: 100, r: 14, mat: { color: 0x7755DD } }
   	]
@@ -85,19 +85,8 @@ window.requestAnimFrame = (function() {
     this.segH = param.segW || random( 5, 10 );
 
 		if(typeof(param.mat)!=='undefined'){
-      if(param.mat.name == "home"){
-        this.material = new THREE.ShaderMaterial({
-          uniforms:       
-          { 
-            color: { type: "c", value: new THREE.Color( param.mat.color ) },
-          },
-          vertexShader: document.getElementById('vsHome').textContent,
-          fragmentShader: document.getElementById('fsHome').textContent
-        });
-      }else{
-        param.mat.ambient =  param.mat.color;
-  			this.material = new THREE.MeshLambertMaterial( param.mat );
-      }
+      param.mat.ambient =  param.mat.color;
+			this.material = new THREE.MeshLambertMaterial( param.mat );
     }
 		else
 			this.material = new THREE.MeshLambertMaterial( { color: 0xFFFFFF, wireframe: true } ) ;
