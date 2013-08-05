@@ -248,11 +248,29 @@ window.requestAnimFrame = (function() {
 
           };
 
-          // set a directional light
-          var directionalLight = new THREE.DirectionalLight( 0xdddddd, 1 );
-          directionalLight.position.z = 400;
-          directionalLight.name = "directionalLight";
-          scene.add( directionalLight );
+          // set point lights
+          var lightZ = 500, lightXY = 750, lightColor = 0xFFFFFF, lightIntensity = .6, lightDistance = undefined;
+
+          var pointLight0 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
+          pointLight0.position.set( -lightXY, lightXY, lightZ );
+          pointLight0.name = "pointLight0";
+          scene.add( pointLight0 );
+          var pointLight1 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
+          pointLight1.position.set( lightXY, lightXY, lightZ );
+          pointLight1.name = "pointLight0";
+          scene.add( pointLight1 );
+          var pointLight2 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
+          pointLight2.position.set( lightXY, -lightXY, lightZ );
+          pointLight2.name = "pointLight0";
+          scene.add( pointLight2 );
+          var pointLight3 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
+          pointLight3.position.set( -lightXY, -lightXY, lightZ );
+          pointLight3.name = "pointLight3";
+          scene.add( pointLight3 );
+
+
+
+
 
           var ambientLight = new THREE.AmbientLight( 0x444444 );
           ambientLight.name = "ambientLight";
