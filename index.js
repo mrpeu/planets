@@ -4,51 +4,36 @@
 // utils
 
 // src: https://github.com/soulwire/sketch.js/blob/master/js/sketch.js
-random = function( min, max ) {
-
+function random( min, max ) {
     if ( Object.prototype.toString.call( min ) == '[object Array]' )
-
         return min[ ~~( Math.random() * min.length ) ];
-
     if ( typeof max != 'number' )
-
         max = min || 1, min = 0;
-
     return min + Math.random() * ( max - min );
-};
+}
+function extend( target, source, overwrite ) {
+    for ( var key in source )
+        if ( overwrite || !target.hasOwnProperty( key ) )
+            target[ key ] = source[ key ];
+    return target;
+}
+
 // src: Paul Irish obv
 window.requestAnimFrame = (function() {
   return window.requestAnimationFrame ||
-         window.webkitRequestAnimationFrame ||
-         window.mozRequestAnimationFrame ||
-         window.oRequestAnimationFrame ||
-         window.msRequestAnimationFrame ||
-         function(/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
-           window.setTimeout(callback, 1000/60);
-         };
+    window.webkitRequestAnimationFrame ||
+    window.mozRequestAnimationFrame ||
+    window.oRequestAnimationFrame ||
+    window.msRequestAnimationFrame ||
+    function(/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
+      window.setTimeout(callback, 1000/60);
+    };
 })();
 
 
 
 
 (function(){
-  //---------
-  // Map
-  //
-
-  var map = [{
-  	name: "0",
-  	home: { r: 40, rsx: 0.001, rsy: 0.001,  mat: { name: "home", color: 0x77FF55 }, segW: 10, segH: 10 },
-  	planets: [
-      { x: -150, y: 150, r: 20, mat: { color: 0xA55000 } },   
-      { x:  200, y:  20, r: 14, mat: { color: 0xA55000 } },   
-      { x: -200, y: -200, r: 17,mat: { color: 0xFFDD22 } },
-      { x: 150, y: 200, r: 17, mat: { color: 0xFFDD22 } },
-      { x: 500, y: -250, r: 20, mat: { color: 0x7755DD } },   
-      { x: -500, y: 100, r: 14, mat: { color: 0x7755DD } }
-  	]
-  }];
-
 
   //---------
   // Planet
@@ -62,29 +47,26 @@ window.requestAnimFrame = (function() {
 
   Planet.prototype.init = function( param ){
 
-		this.free = param.free || false;
-
-		this.radius = param.r || 10;
-
     this.mouseable = param.mouseable || true;
-
-		// speed
-		this.sx = param.sx || random( -0.5, 0.5 ) ;
-		this.sy = param.sy || random( -0.5, 0.5 );
-		// acceleration
-		this.ax = param.ax || 0.0;
-		this.ay = param.ay || 0.0;
+    //radius
+    this.radius = param.radius || random(10,20);
+    // speed
+    this.sx = param.sx || random( -0.5, 0.5 ) ;
+    this.sy = param.sy || random( -0.5, 0.5 );
+    // acceleration
+    this.ax = param.ax || 0.0;
+    this.ay = param.ay || 0.0;
     // rotation
     this.rx = param.rx || random( -0.01, 0.008);
     this.ry = param.ry || random( -0.01, 0.008);
     // rotation speed
     this.rsx = param.rsx || random( -0.01, 0.01);
     this.rsy = param.rsy || random( -0.01, 0.01);
-
+    // nb segments of the sphere geometry
     this.segW = param.segW || random( 5, 10 );
-    this.segH = param.segW || random( 5, 10 );
+    this.segH = param.segH || random( 5, 10 );
 
-		if(typeof(param.mat)!=='undefined'){
+    if(typeof(param.mat)!=='undefined'){
       param.mat.ambient =  param.mat.color;
 			this.material = new THREE.MeshLambertMaterial( param.mat );
     }
@@ -155,17 +137,62 @@ window.requestAnimFrame = (function() {
 	};
 
 
-  function PlanetGold(){
+  function PlanetYellow( param ){
 
+    param.mat = param.mat || {};
+    param.mat.color = param.mat.color || 0xEEEE11;
+
+    this.init( param || {} );
   }
 
-  PlanetGold.prototype = new Planet();
+  PlanetYellow.prototype = new Planet();
+
+  PlanetYellow.prototype.init = function( param ){
+
+    Planet.prototype.init.call(this, param);
+
+  };
+
+
+  function PlanetBlue( param ){
+
+    param.mat = param.mat || {};
+    param.mat.color = param.mat.color || 0x0CCFFF;
+
+    this.init( param || {} );
+  }
+
+  PlanetBlue.prototype = new Planet();
+
+
+  function PlanetRed( param ){
+
+    param.mat = param.mat || {};
+    param.mat.color = param.mat.color || 0xFF4444;
+
+    this.init( param || {} );
+  }
+
+  PlanetRed.prototype = new Planet();
 
   //----------
 
   //----------
   // Init and go!
   //
+
+  var map = [{
+    name: "0",
+    home: new Planet({ radius: 50, rsx: 0.001, rsy: 0.001,  mat: { color: 0x77FF55 }, segW: 10, segH: 10 }),
+    planets: [
+      new PlanetRed({ x: -150, y: 150 }),
+      new PlanetRed({ x:  200, y:  20 }),
+      new PlanetYellow({ x: -200, y: -200 }),
+      new PlanetYellow({ x: 150, y: 200 }),
+      new PlanetBlue({ x: 500, y: -250 }),
+      new PlanetBlue({ x: -500, y: 100 })
+    ]
+  }];
 
   var CANVAS_WIDTH, CANVAS_HEIGHT,
       camera, 
@@ -202,19 +229,22 @@ window.requestAnimFrame = (function() {
 
 
           // create home
-          var p;
-          stars.push( p = new Planet( currentMap.home ));
+          var p = currentMap.home;
+          stars.push( p );
           scene.add( p.mesh );
 
-          console.log("Created " + p.mesh.name + " #" + p.planetId + ". proto=#" + Planet.prototype.planetId);
+          //console.log("Created " + p.mesh.name + " #" + p.planetId + ". proto=#" + Planet.prototype.planetId);
 
           // create satellites
-          for (var i = map[0].planets.length - 1; i >= 0; i--) {
+          for (var i = currentMap.planets.length - 1; i >= 0; i--) {
 
-          	stars.push( p = new Planet( currentMap.planets[i] ) );
-            scene.add(p.mesh);
+            p = currentMap.planets[i];
 
-          console.log("Created " + p.mesh.name + " #" + p.planetId + ". proto=#" + Planet.prototype.planetId);
+          	stars.push( p );
+
+            scene.add( p.mesh );
+
+          //console.log("Created " + p.mesh.name + " #" + p.planetId + ". proto=#" + Planet.prototype.planetId);
 
           };
 
