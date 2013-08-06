@@ -5,421 +5,404 @@
 
 // src: https://github.com/soulwire/sketch.js/blob/master/js/sketch.js
 function random( min, max ) {
-    if ( Object.prototype.toString.call( min ) == '[object Array]' )
-        return min[ ~~( Math.random() * min.length ) ];
-    if ( typeof max != 'number' )
-        max = min || 1, min = 0;
-    return min + Math.random() * ( max - min );
+  if ( Object.prototype.toString.call( min ) == '[object Array]' )
+    return min[~~( Math.random() * min.length )];
+  if ( typeof max != 'number' )
+    max = min || 1, min = 0;
+  return min + Math.random() * ( max - min );
 }
 function extend( target, source, overwrite ) {
-    for ( var key in source )
-        if ( overwrite || !target.hasOwnProperty( key ) )
-            target[ key ] = source[ key ];
-    return target;
+  for ( var key in source )
+    if ( overwrite || !target.hasOwnProperty( key ) )
+      target[key] = source[key];
+  return target;
 }
 
 // src: Paul Irish obv
-window.requestAnimFrame = (function() {
+window.requestAnimFrame = ( function () {
   return window.requestAnimationFrame ||
     window.webkitRequestAnimationFrame ||
     window.mozRequestAnimationFrame ||
     window.oRequestAnimationFrame ||
     window.msRequestAnimationFrame ||
-    function(/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
-      window.setTimeout(callback, 1000/60);
+    function (/* function FrameRequestCallback */ callback, /* DOMElement Element */ element ) {
+      window.setTimeout( callback, 1000 / 60 );
     };
-})();
+} )();
 
 
 
 
-(function(){
+Game = function ( container ) {
 
-  //---------
-  // Planet
-  //
-
-  function Planet( param ) {
-    this.init( param || {} );
-  }
-
-  Planet.prototype.planetId = 0;
-
-  Planet.prototype.init = function( param ){
+  var Planet = function ( param ) {
+    param = param || {};
 
     this.mouseable = param.mouseable || true;
     //radius
-    this.radius = param.radius || random(10,20);
+    this.radius = param.radius || random( 7, 15 );
     // speed
-    this.sx = param.sx || random( -0.5, 0.5 ) ;
+    this.sx = param.sx || random( -0.5, 0.5 );
     this.sy = param.sy || random( -0.5, 0.5 );
     // acceleration
     this.ax = param.ax || 0.0;
     this.ay = param.ay || 0.0;
     // rotation
-    this.rx = param.rx || random( -0.01, 0.008);
-    this.ry = param.ry || random( -0.01, 0.008);
+    this.rx = param.rx || random( -0.01, 0.008 );
+    this.ry = param.ry || random( -0.01, 0.008 );
     // rotation speed
-    this.rsx = param.rsx || random( -0.01, 0.01);
-    this.rsy = param.rsy || random( -0.01, 0.01);
+    this.rsx = param.rsx || random( -0.01, 0.01 );
+    this.rsy = param.rsy || random( -0.01, 0.01 );
     // nb segments of the sphere geometry
     this.segW = param.segW || random( 5, 10 );
     this.segH = param.segH || random( 5, 10 );
 
-    if(typeof(param.mat)!=='undefined'){
-      param.mat.ambient =  param.mat.color;
-			this.material = new THREE.MeshLambertMaterial( param.mat );
+    if ( typeof ( param.mat ) !== 'undefined' ) {
+      param.mat.ambient = param.mat.color;
+      this.material = new THREE.MeshLambertMaterial( param.mat );
     }
-		else
-			this.material = new THREE.MeshLambertMaterial( { color: 0xFFFFFF, wireframe: true } ) ;
+    else
+      this.material = new THREE.MeshLambertMaterial( { color: 0xFFFFFF, wireframe: true } );
 
     var geometry = new THREE.SphereGeometry( this.radius, this.segW, this.segH );
     geometry.mergeVertices();
 
     this.mesh = new THREE.Mesh( geometry, this.material );
 
-		this.mesh.position.x = param.x || 0;
-		this.mesh.position.y = param.y || 0;
+    this.mesh.position.x = param.x || 0;
+    this.mesh.position.y = param.y || 0;
 
     this.mesh.rotation.x = param.rx || 0;
     this.mesh.rotation.y = param.ry || 0;
 
     this.mesh.glowMesh = this.initGlow( this.mesh );
 
-    param.knead = param.knead || .5;
-
-    this.knead( param.knead );
+    this.knead( param.knead || .5 );
 
     this.planetId = this.mesh.planetId = Planet.prototype.planetId++;
-    
+
     this.mesh.name = "Planet" + this.planetId;
     this.mesh.glowMesh.name = this.mesh.name + "-" + "glowMesh";
-
   };
 
-  Planet.prototype.initGlow = function(mesh){
+  Planet.prototype.planetId = 0;
 
-    var matGlow = new THREE.ShaderMaterial( 
+  Planet.prototype.initGlow = function ( mesh ) {
+
+    var matGlow = new THREE.ShaderMaterial(
       {
-        uniforms:       
-        { 
+        uniforms:
+        {
           glowColor: { type: "v3", value: mesh.material.color },
-          power: { type: "f", value: 1}
+          power: { type: "f", value: 1 }
         },
-        vertexShader:   document.getElementById( 'vsGlow' ).textContent,
+        vertexShader: document.getElementById( 'vsGlow' ).textContent,
         fragmentShader: document.getElementById( 'fsGlow' ).textContent,
         side: THREE.BackSide,
         blending: THREE.AdditiveBlending,
         transparent: true
       }
     );
-    var geom = new THREE.SphereGeometry(mesh.geometry.radius, 30, 30);
+    var geom = new THREE.SphereGeometry( mesh.geometry.radius, 30, 30 );
     //var geom = mesh.geometry.clone();
 
     var glowMesh = new THREE.Mesh( geom, matGlow );
     glowMesh.scale.x = glowMesh.scale.y = glowMesh.scale.z = 1.5;
     glowMesh.visible = false;
 
-    mesh.add(glowMesh);
+    mesh.add( glowMesh );
 
     return glowMesh;
   };
 
-	Planet.prototype.move = function( ctx ){
+  Planet.prototype.move = function ( ctx ) {
 
-		if(this.free){
+    if ( this.free ) {
 
-			this.mesh.position.x += this.sx;
-			this.mesh.position.y += this.sy;
+      this.mesh.position.x += this.sx;
+      this.mesh.position.y += this.sy;
 
-			this.sx += this.ax;
-			this.sy += this.ay;
-		}
+      this.sx += this.ax;
+      this.sy += this.ay;
+    }
 
     this.mesh.rotation.x += this.rsx;
-		this.mesh.rotation.y += this.rsy;
+    this.mesh.rotation.y += this.rsy;
 
-	};
+  };
 
-  Planet.prototype.knead = function( min, max ){
+  Planet.prototype.knead = function ( min, max ) {
 
-    if( min == undefined ) return;
+    if ( min == undefined ) return;
 
-    if( max == undefined ){
-      var d = Math.abs(min-1)/2;
+    if ( max == undefined ) {
+      var d = min / 2;
       max = 1 + d;
       min = 1 - d;
     }
 
-    var ray;
+    var r = this.radius / 10;
 
-    this.mesh.geometry.vertices.forEach(function(v){
+    this.mesh.geometry.vertices.forEach( function ( v ) {
 
       v.multiplyScalar( random( min, max ) );
 
-    }, this.mesh);
+      v[random( ['x', 'y', 'z'] )] += random( r );
+
+    }, this.mesh );
   }
 
 
-  function PlanetYellow( param ){
+  var PlanetYellow = function ( param ) {
 
+    param = param || {};
     param.mat = param.mat || {};
     param.mat.color = param.mat.color || 0xEEEE11;
 
-    this.init( param || {} );
+    Planet.call( this, param );
   }
 
-  PlanetYellow.prototype = new Planet();
+  PlanetYellow.prototype = Object.create( Planet.prototype );
 
-  PlanetYellow.prototype.init = function( param ){
 
-    Planet.prototype.init.call(this, param);
+  var PlanetBlue = function ( param ) {
+
+    param = param || {};
+    param.mat = param.mat || {};
+    param.mat.color = param.mat.color || 0x0CCFFF;
+
+    Planet.call( this, param );
+  }
+
+  PlanetBlue.prototype = Object.create( Planet.prototype );
+
+
+  var PlanetRed = function ( param ) {
+
+    param = param || {};
+    param.mat = param.mat || {};
+    param.mat.color = param.mat.color || 0xFF4444;
+
+    Planet.call( this, param );
+  }
+
+  PlanetRed.prototype = Object.create( Planet.prototype );
+
+
+  var containerResize = function () {
+
+    CANVAS_WIDTH = window.innerWidth - 5;
+    CANVAS_HEIGHT = window.innerHeight - 5;
+    renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
+
+    camera.left = CANVAS_WIDTH / -2;
+    camera.right = CANVAS_WIDTH / 2;
+    camera.top = CANVAS_HEIGHT / 2;
+    camera.bottom = CANVAS_HEIGHT / -2;
+    camera.updateProjectionMatrix();
+
+  };
+
+  // vars for mouseMove
+  var ray = new THREE.Raycaster();
+  var projector = new THREE.Projector();
+  var directionVector = new THREE.Vector3();
+  var starsHovered = []; // id of the star currently hovered
+
+  var mouseMove = function ( e ) {
+
+    var x = e.clientX - this.CANVAS_WIDTH / 2,
+        y = -e.clientY + this.CANVAS_HEIGHT / 2,
+        mouseVec3 = new THREE.Vector3( x, y, 0 ),
+        _starsHovered = starsHovered,
+        // loop vars
+        star, d, r
+    ;
+
+    starsHovered = [];
+
+    for ( i in stars ) {
+      star = stars[i];
+      d = star.mesh.position.distanceTo( mouseVec3 );
+      r = star.mesh.geometry.boundingSphere.radius;
+
+      if ( d < r ) {
+        starsHovered.push( star.planetId );
+        star.mesh.glowMesh.visible = true;
+      }
+    }
+
+    if ( _starsHovered.length > 0 )
+      for ( i in stars ) {
+        var star = stars[i];
+
+        for ( j in _starsHovered ) {
+          var _starId = _starsHovered[j];
+
+          if ( star.planetId == _starId )
+            if ( starsHovered.indexOf( star.planetId ) < 0 ) {
+              star.mesh.glowMesh.visible = false;
+              break;
+            }
+        }
+      }
+
+  };
+
+  Game.prototype.update = function ( ctx ) {
+
+    for ( var i = stars.length - 1; i >= 0; i-- ) {
+      stars[i].move( ctx );
+    }
+
+  };
+
+  Game.prototype.render = function () {
+
+    window.requestAnimFrame( this.render.bind(this) );
+
+    this.update( this );
+
+    this.renderer.render( this.scene, this.camera );
 
   };
 
 
-  function PlanetBlue( param ){
+  /**********
+   * Init
+   */
 
-    param.mat = param.mat || {};
-    param.mat.color = param.mat.color || 0x0CCFFF;
-
-    this.init( param || {} );
-  }
-
-  PlanetBlue.prototype = new Planet();
-
-
-  function PlanetRed( param ){
-
-    param.mat = param.mat || {};
-    param.mat.color = param.mat.color || 0xFF4444;
-
-    this.init( param || {} );
-  }
-
-  PlanetRed.prototype = new Planet();
-
-  //----------
-
-  //----------
-  // Init and go!
-  //
-
-  var map = [{
+  this.map = [{
     name: "0",
-    home: new Planet({ radius: 30, rsx: 0.001, rsy: 0.001,  mat: { color: 0x77FF55, shading: THREE.FlatShading }, segW: 10, segH: 10 }),
+    home: new Planet( {
+      radius: 30,
+      rx: random( 1 ), ry: random( 1 ),
+      rsx: Number.MIN_VALUE, rsy: Number.MIN_VALUE,
+      mat: { color: 0x77FF55, shading: THREE.FlatShading },
+      segW: 6, segH: 4, knead: .1
+    } ),
     planets: [
-      new PlanetRed({ x: -150, y: 150 }),
-      new PlanetRed({ x:  200, y:  20 }),
-      new PlanetYellow({ x: -200, y: -200 }),
-      new PlanetYellow({ x: 150, y: 200 }),
-      new PlanetBlue({ x: 500, y: -250 }),
-      new PlanetBlue({ x: -500, y: 100 })
+      new PlanetRed( { x: -150, y: 150 } ),
+      new PlanetRed( { x: 200, y: 20 } ),
+      new PlanetYellow( { x: -200, y: -200 } ),
+      new PlanetYellow( { x: 150, y: 200 } ),
+      new PlanetBlue( { x: 500, y: -250 } ),
+      new PlanetBlue( { x: -500, y: 100 } )
     ]
   }];
 
-  var CANVAS_WIDTH, CANVAS_HEIGHT,
-      camera, 
-      scene,
-      sketch, 
-      renderer,
-      stars = [],
-      currentMap = map[0]
-  ;
+  this.zoom = 1;
 
-  try{
-      
-      (function(){
+  this.container = container || document.body;//getElementById("container")
 
-        var
-          container = document.body;//getElementById("container")
-        ;
-        
-        function init() {
+  this.currentMapIndex = 0;
 
-          //CANVAS_WIDTH = 640, CANVAS_HEIGHT = 480;
-          CANVAS_WIDTH = window.innerWidth-5;
-          CANVAS_HEIGHT = window.innerHeight-5;
-          //CANVAS_WIDTH = container.clientWidth;
-          //CANVAS_HEIGHT = container.clientHeight;
+  //this.CANVAS_WIDTH = 640, this.CANVAS_HEIGHT = 480;
+  this.CANVAS_WIDTH = window.innerWidth - 5;
+  this.CANVAS_HEIGHT = window.innerHeight - 5;
+  //this.CANVAS_WIDTH = container.clientWidth;
+  //this.CANVAS_HEIGHT = container.clientHeight;
 
-          renderer = new THREE.WebGLRenderer({ antialias: true });
+  this.renderer = new THREE.WebGLRenderer( { antialias: true } );
 
-          renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
+  this.renderer.setSize( this.CANVAS_WIDTH, this.CANVAS_HEIGHT );
 
-          container.appendChild( renderer.domElement );
+  this.container.appendChild( this.renderer.domElement );
 
-          scene = new THREE.Scene();
+  this.scene = new THREE.Scene();
 
 
-          // create home
-          var p = currentMap.home;
-          stars.push( p );
-          scene.add( p.mesh );
+  var stars = [];
+  var currentMap = this.map[this.currentMapIndex];
 
-          //console.log("Created " + p.mesh.name + " #" + p.planetId + ". proto=#" + Planet.prototype.planetId);
+  // create home
+  var p = currentMap.home;
+  stars.push( p );
+  this.scene.add( p.mesh );
 
-          // create satellites
-          for (var i = currentMap.planets.length - 1; i >= 0; i--) {
+  //console.log("Created " + p.mesh.name + " #" + p.planetId + ". proto=#" + Planet.prototype.planetId);
 
-            p = currentMap.planets[i];
+  // create satellites
+  for ( var i = currentMap.planets.length - 1; i >= 0; i-- ) {
 
-          	stars.push( p );
+    p = currentMap.planets[i];
 
-            scene.add( p.mesh );
+    stars.push( p );
 
-          //console.log("Created " + p.mesh.name + " #" + p.planetId + ". proto=#" + Planet.prototype.planetId);
+    this.scene.add( p.mesh );
 
-          };
+    //console.log("Created " + p.mesh.name + " #" + p.planetId + ". proto=#" + Planet.prototype.planetId);
 
-/*
-          // set a hemisphere light
-          var hemiLight = new THREE.HemisphereLight( 0xffffff, 0xdddddd, .6 );
-          scene.add( hemiLight );
-*/
-/*
-          // set a directional light
-          var directionalLight = new THREE.DirectionalLight( 0xdddddd, 1 );
-          directionalLight.position.z = 1000;
-          directionalLight.name = "directionalLight";
-          scene.add( directionalLight );
-*/
- 
-          // set point lights
-          var lightZ = 500, lightXY = 750, lightColor = 0xFFFFFF, lightIntensity = .6, lightDistance = undefined;
+  };
 
-          var pointLight0 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
-          pointLight0.position.set( -lightXY, lightXY, lightZ );
-          pointLight0.name = "pointLight0";
-          scene.add( pointLight0 );
- 
-          var pointLight1 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
-          pointLight1.position.set( lightXY, lightXY, lightZ );
-          pointLight1.name = "pointLight0";
-          scene.add( pointLight1 );
-          var pointLight2 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
-          pointLight2.position.set( lightXY, -lightXY, lightZ );
-          pointLight2.name = "pointLight0";
-          scene.add( pointLight2 );
-          var pointLight3 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
-          pointLight3.position.set( -lightXY, -lightXY, lightZ );
-          pointLight3.name = "pointLight3";
-          scene.add( pointLight3 );
+  /*
+    // set a hemisphere light
+    var hemiLight = new THREE.HemisphereLight( 0xffffff, 0xdddddd, .6 );
+    scene.add( hemiLight );
+  */
+  /*
+    // set a directional light
+    var directionalLight = new THREE.DirectionalLight( 0xdddddd, 1 );
+    directionalLight.position.z = 1000;
+    directionalLight.name = "directionalLight";
+    scene.add( directionalLight );
+  */
 
+  // set point lights
+  var lightZ = 500, lightXY = 750, lightColor = 0xFFFFFF, lightIntensity = .6, lightDistance = undefined;
 
+  var pointLight0 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
+  pointLight0.position.set( -lightXY, lightXY, lightZ );
+  pointLight0.name = "pointLight0";
+  this.scene.add( pointLight0 );
 
+  var pointLight1 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
+  pointLight1.position.set( lightXY, lightXY, lightZ );
+  pointLight1.name = "pointLight0";
+  this.scene.add( pointLight1 );
+  var pointLight2 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
+  pointLight2.position.set( lightXY, -lightXY, lightZ );
+  pointLight2.name = "pointLight0";
+  this.scene.add( pointLight2 );
+  var pointLight3 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
+  pointLight3.position.set( -lightXY, -lightXY, lightZ );
+  pointLight3.name = "pointLight3";
+  this.scene.add( pointLight3 );
 
-          var ambientLight = new THREE.AmbientLight( 0x444444 );
-          ambientLight.name = "ambientLight";
-          //scene.add(ambientLight);
-          
+  /*
+  var ambientLight = new THREE.AmbientLight( 0x444444 );
+  ambientLight.name = "ambientLight";
+  scene.add(ambientLight);
+  */
 
-          window.addEventListener('resize', resize.bind(this));
+  window.addEventListener( 'resize', containerResize.bind( this ) );
 
-          container.addEventListener('mousemove', mouseMove.bind(this));
-
-
-          var width = CANVAS_WIDTH,
-              height = CANVAS_HEIGHT;
-          camera = new THREE.OrthographicCamera( CANVAS_WIDTH / - 2, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_HEIGHT / - 2, -100, 600 );
-        };
-        
-        function resize() {
-    
-          CANVAS_WIDTH  = window.innerWidth-5;
-          CANVAS_HEIGHT = window.innerHeight-5;          
-          renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
-
-          camera.left = CANVAS_WIDTH / - 2;
-          camera.right = CANVAS_WIDTH / 2;
-          camera.top = CANVAS_HEIGHT / 2;
-          camera.bottom = CANVAS_HEIGHT / - 2;
-          camera.updateProjectionMatrix();
-
-        };
-
-          
-        var ray = new THREE.Raycaster(),
-          projector = new THREE.Projector(),
-          directionVector = new THREE.Vector3(),
-          starsHovered = []; // id of the star currently hovered
-        ;
-        function mouseMove( e ) {
-
-          var x = e.clientX - CANVAS_WIDTH/2,
-              y = -e.clientY + CANVAS_HEIGHT/2,
-              mouseVec3 = new THREE.Vector3(x, y, 0),
-              _starsHovered = starsHovered,
-              // loop vars
-              star, d, r
-          ;
-
-          starsHovered = [];
-
-          for(i in stars){
-            star = stars[i];
-            d = star.mesh.position.distanceTo(mouseVec3);
-            r = star.mesh.geometry.boundingSphere.radius;
-
-            if( d < r )
-            {
-              starsHovered.push(star.planetId);
-              star.mesh.glowMesh.visible = true;
-            }
-          }
-
-          if(_starsHovered.length>0)
-          for(i in stars){
-            var star = stars[i];
-
-            for(j in _starsHovered){
-              var _starId = _starsHovered[j];
-
-              if(star.planetId == _starId)
-              if(starsHovered.indexOf( star.planetId ) < 0)
-              {
-                star.mesh.glowMesh.visible = false;
-                break;
-              }
-            }
-          }
-
-        }
-
-      
-        function update( ctx ) {
-
-          for (var i = stars.length - 1; i >= 0; i--) {
-          	stars[i].move(ctx);
-          }
-        
-        };
-      
-        function render() {
-
-          window.requestAnimFrame( render, this );
-
-          update( this );
-
-          renderer.render( scene, camera );
-
-        };
+  this.container.addEventListener( 'mousemove', mouseMove.bind( this ) );
 
 
-        init();
+  var width = this.CANVAS_WIDTH * this.zoom,
+      height = this.CANVAS_HEIGHT * this.zoom;
 
-        render();
+  this.camera = new THREE.OrthographicCamera( width / -2, width / 2, height / 2, height / -2, -100, 600 );
 
-      })();
-    
-   } catch (error) {
-     nogl = document.getElementById("nogl");
-     nogl.innerHTML += "<h2>" + error.message + "</h2>";
-     nogl.innerHTML += "<p>" + error.stack + "</p>";
-     nogl.style.display = 'block';
-  }
+};
 
-})();
+
+
+var game;
+
+try {
+  game = new Game();
+}
+catch ( error ) {
+  nogl = document.getElementById( "nogl" );
+  nogl.innerHTML += "<h2>" + error.message + "</h2>";
+  nogl.innerHTML += "<p>" + error.stack + "</p>";
+  nogl.style.display = 'block';
+}
+
+if(game != "undefined")
+  game.render();
 
 
 
