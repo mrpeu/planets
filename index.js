@@ -212,6 +212,8 @@ Game = function ( container ) {
       d = star.mesh.position.distanceTo( mouseVec3 );
       r = star.mesh.geometry.boundingSphere.radius;
 
+      //if(i==0) console.log(d + " << " + JSON.stringify(mouseVec3) );
+
       if ( d < r ) {
         starsHovered.push( star.planetId );
         star.mesh.glowMesh.visible = true;
@@ -236,21 +238,7 @@ Game = function ( container ) {
   };
 
   var mouseWheel = function( e ){
-    this.zoom += e.wheelDelta/1000;
-
-    this.CANVAS_WIDTH = this.container.clientWidth;
-    this.CANVAS_HEIGHT = this.container.clientHeight;
-
-    var aspect = this.CANVAS_WIDTH/this.CANVAS_HEIGHT;
-    this.camera.aspect = aspect;
-
-    this.CANVAS_WIDTH *= this.zoom;
-    this.CANVAS_HEIGHT *= this.zoom;
-
-    this.camera.left = this.CANVAS_WIDTH / -2;
-    this.camera.right = this.CANVAS_WIDTH / 2;
-    this.camera.top = this.CANVAS_HEIGHT / 2;
-    this.camera.bottom = this.CANVAS_HEIGHT / -2;
+    this.camera.fov -= e.wheelDelta/10;
 
     this.camera.updateProjectionMatrix();
   };
@@ -259,13 +247,17 @@ Game = function ( container ) {
   Game.prototype.resizeContainer = function () {
 
     CANVAS_WIDTH  = window.innerWidth-5;
-    CANVAS_HEIGHT = window.innerHeight-5;          
+    CANVAS_HEIGHT = window.innerHeight-5;
+
     this.renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
 
     this.camera.left = CANVAS_WIDTH / - 2;
     this.camera.right = CANVAS_WIDTH / 2;
     this.camera.top = CANVAS_HEIGHT / 2;
     this.camera.bottom = CANVAS_HEIGHT / - 2;
+    
+    this.camera.aspect = CANVAS_WIDTH / CANVAS_HEIGHT;
+    
     this.camera.updateProjectionMatrix();
   };
 
@@ -310,8 +302,6 @@ Game = function ( container ) {
       new PlanetBlue( { x: -500, y: 100 } )
     ]
   }];
-
-  this.zoom = 1;
 
   this.container = container || document.body;//getElementById("container")
 
@@ -402,11 +392,12 @@ Game = function ( container ) {
   this.container.addEventListener( 'mousemove', mouseMove.bind( this ) );
 
 
-  var width = this.CANVAS_WIDTH * this.zoom,
-      height = this.CANVAS_HEIGHT * this.zoom;
+  var width = this.CANVAS_WIDTH,
+      height = this.CANVAS_HEIGHT;
 
-  this.camera = new THREE.OrthographicCamera( width / -2, width / 2, height / 2, height / -2, -100, 600 );
-
+  //this.camera = new THREE.OrthographicCamera( width / -2, width / 2, height / 2, height / -2, -100, 600 );
+  this.camera = new THREE.PerspectiveCamera( 80, width/height, 1, 600 );
+  this.camera.position.z = 500;
 };
 
 
