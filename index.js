@@ -189,20 +189,6 @@ Game = function ( container ) {
   PlanetRed.prototype = Object.create( Planet.prototype );
 
 
-  var containerResize = function () {
-
-    CANVAS_WIDTH = window.innerWidth - 5;
-    CANVAS_HEIGHT = window.innerHeight - 5;
-    renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
-
-    camera.left = CANVAS_WIDTH / -2;
-    camera.right = CANVAS_WIDTH / 2;
-    camera.top = CANVAS_HEIGHT / 2;
-    camera.bottom = CANVAS_HEIGHT / -2;
-    camera.updateProjectionMatrix();
-
-  };
-
   // vars for mouseMove
   var ray = new THREE.Raycaster();
   var projector = new THREE.Projector();
@@ -247,6 +233,40 @@ Game = function ( container ) {
         }
       }
 
+  };
+
+  var mouseWheel = function( e ){
+    this.zoom += e.wheelDelta/1000;
+
+    this.CANVAS_WIDTH = this.container.clientWidth;
+    this.CANVAS_HEIGHT = this.container.clientHeight;
+
+    var aspect = this.CANVAS_WIDTH/this.CANVAS_HEIGHT;
+    this.camera.aspect = aspect;
+
+    this.CANVAS_WIDTH *= this.zoom;
+    this.CANVAS_HEIGHT *= this.zoom;
+
+    this.camera.left = this.CANVAS_WIDTH / -2;
+    this.camera.right = this.CANVAS_WIDTH / 2;
+    this.camera.top = this.CANVAS_HEIGHT / 2;
+    this.camera.bottom = this.CANVAS_HEIGHT / -2;
+
+    this.camera.updateProjectionMatrix();
+  };
+
+
+  Game.prototype.resizeContainer = function () {
+
+    CANVAS_WIDTH  = window.innerWidth-5;
+    CANVAS_HEIGHT = window.innerHeight-5;          
+    this.renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
+
+    this.camera.left = CANVAS_WIDTH / - 2;
+    this.camera.right = CANVAS_WIDTH / 2;
+    this.camera.top = CANVAS_HEIGHT / 2;
+    this.camera.bottom = CANVAS_HEIGHT / - 2;
+    this.camera.updateProjectionMatrix();
   };
 
   Game.prototype.update = function ( ctx ) {
@@ -375,7 +395,9 @@ Game = function ( container ) {
   scene.add(ambientLight);
   */
 
-  window.addEventListener( 'resize', containerResize.bind( this ) );
+  window.addEventListener( 'resize', this.resizeContainer.bind(this) );
+
+  window.addEventListener( 'mousewheel', mouseWheel.bind( this ) );
 
   this.container.addEventListener( 'mousemove', mouseMove.bind( this ) );
 
