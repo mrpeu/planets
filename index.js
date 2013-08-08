@@ -485,15 +485,15 @@ Game = function ( container ) {
   ctrlPts = getControlPoints( p0, p1, nbCtrlPts );
   
   thunderGeo = 
-    new THREE.TubeGeometry( new THREE.LineCurve( p0, p1 ), 1, 1, radiusSeg, false )
-  ;
+    //new THREE.TubeGeometry( new THREE.LineCurve( p0, p1 ), 1, 1, radiusSeg, false )
+  //;
 
-  THREE.GeometryUtils.merge( thunderGeo,
+  //THREE.GeometryUtils.merge( thunderGeo,
     new THREE.TubeGeometry(
       new THREE.SplineCurve3(
         getNoisePoints( ctrlPts, noiseAmount )
       ), nbSeg, 2, radiusSeg, false
-    )
+    //)
   );
 
   THREE.GeometryUtils.merge( thunderGeo,
