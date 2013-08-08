@@ -473,11 +473,13 @@ Game = function ( container ) {
   }
 
   var p0 = this.stars[0].mesh.position,
-      p1 = this.stars[2].mesh.position,
+      planetTarget = this.stars[Math.round(random( 1, this.stars.length - 1 ))],
+      p1 = planetTarget.mesh.position,
+      distance = p1.distanceTo(p0),
       ctrlPts,
-      nbCtrlPts = 15,
-      nbSeg = 90, radiusSeg = 3,
-      noiseAmount = 25
+      nbCtrlPts = Math.round(distance/30),
+      nbSeg = nbCtrlPts*5, radiusSeg = 3,
+      noiseAmount = 20
   ;
 
   ctrlPts = getControlPoints( p0, p1, nbCtrlPts );
@@ -502,7 +504,10 @@ Game = function ( container ) {
     )
   );
   
-  this.scene.add( thunderMesh = new THREE.Mesh( thunderGeo, new THREE.MeshNormalMaterial({ opacity: 0.75, transparent: true  } ) ) );
+  this.scene.add( thunderMesh = new THREE.Mesh(
+    thunderGeo,
+    new THREE.MeshLambertMaterial( { color: planetTarget.material.color, opacity: 0.5, transparent: true } ) )
+  );
 
   /**************/
 };
