@@ -427,31 +427,6 @@ Game = function ( container ) {
    * TEST volume curves
    */
 
-  // http://stackoverflow.com/questions/13940983/how-to-draw-bezier-curve-by-several-points
-  var getBezierApproximation = function ( controlPoints, outputSegmentCount ) {
-    var pts = [], t;
-
-    for ( var i = 0; i <= outputSegmentCount; i++ ) {
-      t = i / outputSegmentCount;
-      pts[i] = getBezierPoint( t, controlPoints, 0, controlPoints.length );
-    }
-
-    return pts;
-  }
-
-  var getBezierPoint = function ( t, controlPoints, index, count ) {
-    if ( count == 1 ) return controlPoints[index];
-
-    var p0 = getBezierPoint( t, controlPoints, index, count - 1 );
-    var p1 = getBezierPoint( t, controlPoints, index + 1, count - 1 );
-
-    return new THREE.Vector3(
-      ( 1 - t ) * p0.x + t * p1.x,
-      ( 1 - t ) * p0.y + t * p1.y,
-      ( 1 - t ) * p0.z + t * p1.z
-    );
-  }
-
   var getControlPoints = function ( p0, p1, nbSeg) {
     var pts = [],
       cursor = p0.clone(),
