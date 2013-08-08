@@ -58,8 +58,23 @@ Game = function ( container ) {
     this.segH = param.segH || random( 5, 10 );
 
     if ( typeof ( param.mat ) !== 'undefined' ) {
-      param.mat.ambient = param.mat.color;
-      this.material = new THREE.MeshLambertMaterial( param.mat );
+      if ( param.mat == "home" ) {
+        this.material = new THREE.ShaderMaterial(
+          {
+            uniforms:
+            {
+            },
+            vertexShader: document.getElementById( 'vsHome' ).textContent,
+            fragmentShader: document.getElementById( 'fsHome' ).textContent,
+            side: THREE.BackSide,
+            blending: THREE.AdditiveBlending,
+            transparent: true
+          }
+        );
+      } else {
+        param.mat.ambient = param.mat.color;
+        this.material = new THREE.MeshLambertMaterial( param.mat );
+      }
     }
     else
       this.material = new THREE.MeshLambertMaterial( { color: 0xFFFFFF, wireframe: true } );
@@ -132,6 +147,7 @@ Game = function ( container ) {
   };
 
   Planet.prototype.knead = function ( min, max ) {
+    // rq: careful this is in not correct and only work for a planet at the origin
 
     if ( min == undefined ) return;
 
@@ -207,8 +223,8 @@ Game = function ( container ) {
 
     starsHovered = [];
 
-    for ( i in stars ) {
-      star = stars[i];
+    for ( i in this.stars ) {
+      star = this.stars[i];
       d = star.mesh.position.distanceTo( mouseVec3 );
       r = star.mesh.geometry.boundingSphere.radius;
 
@@ -221,8 +237,8 @@ Game = function ( container ) {
     }
 
     if ( _starsHovered.length > 0 )
-      for ( i in stars ) {
-        var star = stars[i];
+      for ( i in this.stars ) {
+        var star = this.stars[i];
 
         for ( j in _starsHovered ) {
           var _starId = _starsHovered[j];
@@ -237,8 +253,8 @@ Game = function ( container ) {
 
   };
 
-  var mouseWheel = function( e ){
-    this.camera.fov -= e.wheelDelta/10;
+  var mouseWheel = function ( e ) {
+    this.camera.fov -= e.wheelDelta / 10;
 
     this.camera.updateProjectionMatrix();
   };
@@ -246,32 +262,32 @@ Game = function ( container ) {
 
   Game.prototype.resizeContainer = function () {
 
-    CANVAS_WIDTH  = window.innerWidth-5;
-    CANVAS_HEIGHT = window.innerHeight-5;
+    CANVAS_WIDTH = window.innerWidth - 5;
+    CANVAS_HEIGHT = window.innerHeight - 5;
 
     this.renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
 
-    this.camera.left = CANVAS_WIDTH / - 2;
+    this.camera.left = CANVAS_WIDTH / -2;
     this.camera.right = CANVAS_WIDTH / 2;
     this.camera.top = CANVAS_HEIGHT / 2;
-    this.camera.bottom = CANVAS_HEIGHT / - 2;
-    
+    this.camera.bottom = CANVAS_HEIGHT / -2;
+
     this.camera.aspect = CANVAS_WIDTH / CANVAS_HEIGHT;
-    
+
     this.camera.updateProjectionMatrix();
   };
 
   Game.prototype.update = function ( ctx ) {
 
-    for ( var i = stars.length - 1; i >= 0; i-- ) {
-      stars[i].move( ctx );
+    for ( var i = this.stars.length - 1; i >= 0; i-- ) {
+      this.stars[i].move( ctx );
     }
 
   };
 
   Game.prototype.render = function () {
 
-    window.requestAnimFrame( this.render.bind(this) );
+    window.requestAnimFrame( this.render.bind( this ) );
 
     this.update( this );
 
@@ -287,11 +303,13 @@ Game = function ( container ) {
   this.map = [{
     name: "0",
     home: new Planet( {
-      radius: 30,
+      radius: 50,
       rx: random( 1 ), ry: random( 1 ),
+      //rsx: random( .05 ), rsy: random( .05 ),
+      //mat: "home",
       rsx: Number.MIN_VALUE, rsy: Number.MIN_VALUE,
       mat: { color: 0x77FF55, shading: THREE.FlatShading },
-      segW: 6, segH: 4, knead: .1
+      segW: 12, segH: 8, knead: .5
     } ),
     planets: [
       new PlanetRed( { x: -150, y: 150 } ),
@@ -313,7 +331,8 @@ Game = function ( container ) {
   //this.CANVAS_WIDTH = container.clientWidth;
   //this.CANVAS_HEIGHT = container.clientHeight;
 
-  this.renderer = new THREE.WebGLRenderer( { antialias: true } );
+
+  this.renderer = new THREE.WebGLRenderer();
 
   this.renderer.setSize( this.CANVAS_WIDTH, this.CANVAS_HEIGHT );
 
@@ -322,12 +341,12 @@ Game = function ( container ) {
   this.scene = new THREE.Scene();
 
 
-  var stars = [];
+  this.stars = [];
   var currentMap = this.map[this.currentMapIndex];
 
   // create home
   var p = currentMap.home;
-  stars.push( p );
+  this.stars.push( p );
   this.scene.add( p.mesh );
 
   //console.log("Created " + p.mesh.name + " #" + p.planetId + ". proto=#" + Planet.prototype.planetId);
@@ -337,7 +356,7 @@ Game = function ( container ) {
 
     p = currentMap.planets[i];
 
-    stars.push( p );
+    this.stars.push( p );
 
     this.scene.add( p.mesh );
 
@@ -385,7 +404,7 @@ Game = function ( container ) {
   scene.add(ambientLight);
   */
 
-  window.addEventListener( 'resize', this.resizeContainer.bind(this) );
+  window.addEventListener( 'resize', this.resizeContainer.bind( this ) );
 
   window.addEventListener( 'mousewheel', mouseWheel.bind( this ) );
 
@@ -396,8 +415,121 @@ Game = function ( container ) {
       height = this.CANVAS_HEIGHT;
 
   //this.camera = new THREE.OrthographicCamera( width / -2, width / 2, height / 2, height / -2, -100, 600 );
-  this.camera = new THREE.PerspectiveCamera( 80, width/height, 1, 600 );
+  this.camera = new THREE.PerspectiveCamera( 80, width / height, 1, 600 );
   this.camera.position.z = 500;
+
+
+
+
+
+
+  /**************
+   * TEST volume curves
+   */
+
+  // http://stackoverflow.com/questions/13940983/how-to-draw-bezier-curve-by-several-points
+  var getBezierApproximation = function ( controlPoints, outputSegmentCount ) {
+    var pts = [], t;
+
+    for ( var i = 0; i <= outputSegmentCount; i++ ) {
+      t = i / outputSegmentCount;
+      pts[i] = getBezierPoint( t, controlPoints, 0, controlPoints.length );
+    }
+
+    return pts;
+  }
+
+  var getBezierPoint = function ( t, controlPoints, index, count ) {
+    if ( count == 1 ) return controlPoints[index];
+
+    var p0 = getBezierPoint( t, controlPoints, index, count - 1 );
+    var p1 = getBezierPoint( t, controlPoints, index + 1, count - 1 );
+
+    return new THREE.Vector3(
+      ( 1 - t ) * p0.x + t * p1.x,
+      ( 1 - t ) * p0.y + t * p1.y,
+      ( 1 - t ) * p0.z + t * p1.z
+    );
+  }
+
+  var getControlPoints = function ( p0, p1, nbSeg) {
+    var pts = [],
+      cursor = p0.clone(),
+      n = p1.clone().sub( p0 ).divideScalar( nbSeg )
+    ;
+    
+    pts.push( p0 );
+
+    for ( var i = nbSeg - 1; i > 1; i-- ) {
+
+      cursor.add( n );
+
+      pts.push( cursor.clone() );
+
+    }
+
+    pts.push( p1.clone() );
+
+    return pts;
+  }
+
+  var getNoisePoints = function( controlPoints, amount ){
+    var pts = [], pt,
+      l = controlPoints.length - 2,
+      halfAmount = amount / 2
+    ;
+
+    pts.push(controlPoints[l+1]);
+
+    for ( var i = l; i > 1; i-- ) {
+
+      pt = controlPoints[i];
+
+      pts.push( new THREE.Vector3(
+        pt.x,
+        pt.y + random( amount ) - halfAmount,
+        pt.z + random( amount ) - halfAmount
+      ));
+    }
+
+    pts.push(controlPoints[0]);
+
+     return pts; 
+  }
+
+  var p0 = this.stars[0].mesh.position,
+      p1 = this.stars[2].mesh.position,
+      ctrlPts,
+      nbCtrlPts = 15,
+      nbSeg = 90, radiusSeg = 3,
+      noiseAmount = 25
+  ;
+
+  ctrlPts = getControlPoints( p0, p1, nbCtrlPts );
+  
+  thunderGeo = 
+    new THREE.TubeGeometry( new THREE.LineCurve( p0, p1 ), 1, 1, radiusSeg, false )
+  ;
+
+  THREE.GeometryUtils.merge( thunderGeo,
+    new THREE.TubeGeometry(
+      new THREE.SplineCurve3(
+        getNoisePoints( ctrlPts, noiseAmount )
+      ), nbSeg, 2, radiusSeg, false
+    )
+  );
+
+  THREE.GeometryUtils.merge( thunderGeo,
+    new THREE.TubeGeometry(
+      new THREE.SplineCurve3(
+        getNoisePoints( ctrlPts, noiseAmount )
+      ), nbSeg, 2, radiusSeg, false
+    )
+  );
+  
+  this.scene.add( thunderMesh = new THREE.Mesh( thunderGeo, new THREE.MeshNormalMaterial({ opacity: 0.75, transparent: true  } ) ) );
+
+  /**************/
 };
 
 
@@ -414,7 +546,7 @@ catch ( error ) {
   nogl.style.display = 'block';
 }
 
-if(game != "undefined")
+if ( game != "undefined" )
   game.render();
 
 
@@ -427,3 +559,4 @@ if(game != "undefined")
 // next step: http://stemkoski.github.io/Three.js/Mouse-Over.html
 // or http://yomotsu.github.io/threejs-examples/ray_basic/
 // http://www.89a.co.uk/page/14
+// http://mrdoob.github.io/three.js/examples/canvas_lines.html

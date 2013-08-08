@@ -4,6 +4,14 @@
 		"selected_items":
 		[
 			[
+				"thunder",
+				"thunderGeo"
+			],
+			[
+				"geom",
+				"geometry"
+			],
+			[
 				"inner",
 				"innerWidth-5"
 			],
@@ -71,7 +79,7 @@
 			"file": "index.html",
 			"settings":
 			{
-				"buffer_size": 1170,
+				"buffer_size": 1315,
 				"line_ending": "Windows"
 			}
 		},
@@ -87,7 +95,7 @@
 			"file": "index.js",
 			"settings":
 			{
-				"buffer_size": 11293,
+				"buffer_size": 15101,
 				"line_ending": "Windows"
 			}
 		}
@@ -161,6 +169,12 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"stars",
+			"this.stars",
+			"stars",
+			"precision",
+			"position",
+			"zoom",
 			"CANVAS_HEIGHT",
 			"this.geometr",
 			"500",
@@ -209,15 +223,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1170,
+						"buffer_size": 1315,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								253,
-								190
+								937,
+								937
 							]
 						],
 						"settings":
@@ -268,15 +282,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 11293,
+						"buffer_size": 15101,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								6046,
-								6046
+								14000,
+								14000
 							]
 						],
 						"settings":
@@ -288,7 +302,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 3041.0,
+						"translation.y": 6871.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
