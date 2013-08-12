@@ -35,6 +35,49 @@ window.requestAnimFrame = ( function () {
 
 Game = function ( container ) {
 
+  var Colors = {
+    "red": 0xFF4444,
+    "green": 0x77FF55,
+    "blue": 0x0CCFFF,
+    "yellow": 0xEEEE11,
+    "brown": 0xCD853F,
+    "white": 0xFFFFFF
+  };
+
+  var Materials = {
+    default: new THREE.MeshLambertMaterial( { color: Colors.white, wireframe: true } ),
+
+    white: new THREE.MeshLambertMaterial( { color: Colors.white, wireframe: false, shading: THREE.FlatShading } ),
+    red: new THREE.MeshLambertMaterial( { color: Colors.red, wireframe: false, shading: THREE.FlatShading } ),
+    green: new THREE.MeshLambertMaterial( { color: Colors.green, wireframe: false, shading: THREE.FlatShading } ),
+    blue: new THREE.MeshLambertMaterial( { color: Colors.blue, wireframe: false, shading: THREE.FlatShading } ),
+    yellow: new THREE.MeshLambertMaterial( { color: Colors.yellow, wireframe: false, shading: THREE.FlatShading } ),
+    brown: new THREE.MeshLambertMaterial( { color: Colors.brown, wireframe: false, shading: THREE.FlatShading } ),
+
+    home: new THREE.MeshLambertMaterial( { color: Colors.green, wireframe: false, shading: THREE.FlatShading } )
+    //home: new THREE.ShaderMaterial(
+    //  {
+    //    uniforms:
+    //    {
+    //    },
+    //    vertexShader: document.getElementById( 'vsHome' ).textContent,
+    //    fragmentShader: document.getElementById( 'fsHome' ).textContent,
+    //    side: THREE.BackSide,
+    //    blending: THREE.AdditiveBlending,
+    //    transparent: true
+    //  }
+    //)
+  };
+
+
+  /**********************
+   *
+   *
+   *        Planet
+   *
+   *
+   **********************/
+
   var Planet = function ( param ) {
     param = param || {};
 
@@ -57,27 +100,11 @@ Game = function ( container ) {
     this.segW = param.segW || random( 5, 10 );
     this.segH = param.segH || random( 5, 10 );
 
-    if ( typeof ( param.mat ) !== 'undefined' ) {
-      if ( param.mat == "home" ) {
-        this.material = new THREE.ShaderMaterial(
-          {
-            uniforms:
-            {
-            },
-            vertexShader: document.getElementById( 'vsHome' ).textContent,
-            fragmentShader: document.getElementById( 'fsHome' ).textContent,
-            side: THREE.BackSide,
-            blending: THREE.AdditiveBlending,
-            transparent: true
-          }
-        );
-      } else {
-        param.mat.ambient = param.mat.color;
-        this.material = new THREE.MeshLambertMaterial( param.mat );
-      }
+    if ( param.material === undefined || !(param.material instanceof THREE.Material) ) {
+      param.material = Materials.white;
     }
-    else
-      this.material = new THREE.MeshLambertMaterial( { color: 0xFFFFFF, wireframe: true } );
+
+    this.material = param.material;
 
     var geometry = new THREE.SphereGeometry( this.radius, this.segW, this.segH );
     geometry.mergeVertices();
@@ -94,13 +121,15 @@ Game = function ( container ) {
 
     this.knead( param.knead || .5 );
 
-    this.planetId = this.mesh.planetId = Planet.prototype.planetId++;
+    this.id = this.mesh.id = Planet.prototype.id++;
 
-    this.mesh.name = "Planet" + this.planetId;
+    this.mesh.name = "Planet" + this.id;
     this.mesh.glowMesh.name = this.mesh.name + "-" + "glowMesh";
   };
 
-  Planet.prototype.planetId = 0;
+  Planet.prototype.id = 0;
+
+  Planet.prototype.links = [];
 
   Planet.prototype.initGlow = function ( mesh ) {
 
@@ -130,7 +159,7 @@ Game = function ( container ) {
     return glowMesh;
   };
 
-  Planet.prototype.move = function ( ctx ) {
+  Planet.prototype.update = function ( ctx ) {
 
     if ( this.free ) {
 
@@ -144,14 +173,15 @@ Game = function ( container ) {
     this.mesh.rotation.x += this.rsx;
     this.mesh.rotation.y += this.rsy;
 
+    this.links.forEach( function(link){ link.update( ctx ); } );
   };
 
   Planet.prototype.knead = function ( min, max ) {
     // rq: careful this is in not correct and only work for a planet at the origin
 
-    if ( min == undefined ) return;
+    if ( min === undefined ) return;
 
-    if ( max == undefined ) {
+    if ( max === undefined ) {
       var d = min / 2;
       max = 1 + d;
       min = 1 - d;
@@ -172,8 +202,7 @@ Game = function ( container ) {
   var PlanetYellow = function ( param ) {
 
     param = param || {};
-    param.mat = param.mat || {};
-    param.mat.color = param.mat.color || 0xEEEE11;
+    param.material = param.material || Materials.yellow;
 
     Planet.call( this, param );
   }
@@ -184,8 +213,7 @@ Game = function ( container ) {
   var PlanetBlue = function ( param ) {
 
     param = param || {};
-    param.mat = param.mat || {};
-    param.mat.color = param.mat.color || 0x0CCFFF;
+    param.material = param.material || Materials.blue;
 
     Planet.call( this, param );
   }
@@ -196,13 +224,146 @@ Game = function ( container ) {
   var PlanetRed = function ( param ) {
 
     param = param || {};
-    param.mat = param.mat || {};
-    param.mat.color = param.mat.color || 0xFF4444;
+    param.material = param.material || Materials.red;
 
     Planet.call( this, param );
   }
 
   PlanetRed.prototype = Object.create( Planet.prototype );
+
+  
+
+  /**********************
+   *
+   *
+   *        Link
+   *
+   *
+   **********************/
+
+
+  var Link = function ( param ) {
+    
+    param = param || {};
+    this.id = Link.prototype.id++;
+  };
+
+  Link.prototype.id = 0;
+
+  Link.prototype.update = function ( ctx ) {
+    /*
+    var axis, radians;
+
+    rotObjectMatrix = new THREE.Matrix4();
+    rotObjectMatrix.makeRotationAxis(axis.normalize(), radians);
+
+    this.matrix.multiplySelf(rotObjectMatrix);
+
+    this.rotation.setEulerFromRotationMatrix(this.matrix);
+    */
+  }
+
+
+  var LinkCurves = function ( param ) {
+
+    if ( typeof param === "undefined" || param.source === undefined || param.target === undefined )
+      return;
+
+    Link.call( this, param );
+
+    this.source = param.source;
+    this.target = param.target;
+
+    this.material = param.material || Materials.default;
+
+    var getControlPoints = function ( p0, p1, nbSeg) {
+      var pts = [],
+        cursor = p0.clone(),
+        n = p1.clone().sub( p0 ).divideScalar( nbSeg )
+      ;
+    
+      pts.push( p0 );
+
+      for ( var i = nbSeg - 1; i > 1; i-- ) {
+
+        cursor.add( n );
+
+        pts.push( cursor.clone() );
+
+      }
+
+      pts.push( p1.clone() );
+
+      return pts;
+    }
+
+    var getNoisePoints = function( controlPoints, amount ){
+      var pts = [], pt,
+        l = controlPoints.length - 2,
+        halfAmount = amount / 2
+      ;
+
+      pts.push(controlPoints[l+1]);
+
+      for ( var i = l; i > 1; i-- ) {
+
+        pt = controlPoints[i];
+
+        pts.push( new THREE.Vector3(
+          pt.x,
+          pt.y + random( amount ) - halfAmount,
+          pt.z + random( amount ) - halfAmount
+        ));
+      }
+
+      pts.push(controlPoints[0]);
+
+      return pts; 
+    }
+
+    var p0 = this.source.position,
+        p1 = this.target.position,
+        distance = p0.distanceTo( p1 ),
+        ctrlPts,
+        nbCtrlPts = Math.round( distance / 30 ),
+        nbSeg = nbCtrlPts * 5, radiusSeg = 3,
+        noiseAmount = 20
+    ;
+
+    ctrlPts = getControlPoints( p0, p1, nbCtrlPts );
+
+    var geometry =
+      new THREE.TubeGeometry(
+        new THREE.SplineCurve3(
+          getNoisePoints( ctrlPts, noiseAmount )
+        ), nbSeg, 2, radiusSeg, false
+    );
+
+    THREE.GeometryUtils.merge( geometry,
+      new THREE.TubeGeometry(
+        new THREE.SplineCurve3(
+          getNoisePoints( ctrlPts, noiseAmount )
+        ), nbSeg, 2, radiusSeg, false
+      )
+    );
+
+    this.mesh = new THREE.Mesh(
+      geometry,
+      this.material
+    );
+  }
+
+  LinkCurves.prototype = Object.create( Link.prototype );
+
+  
+
+  /**********************
+   *
+   *
+   *        Game
+   *
+   *
+   **********************/
 
 
   // vars for mouseMove
@@ -231,7 +392,7 @@ Game = function ( container ) {
       //if(i==0) console.log(d + " << " + JSON.stringify(mouseVec3) );
 
       if ( d < r ) {
-        starsHovered.push( star.planetId );
+        starsHovered.push( star.id );
         star.mesh.glowMesh.visible = true;
       }
     }
@@ -243,8 +404,8 @@ Game = function ( container ) {
         for ( j in _starsHovered ) {
           var _starId = _starsHovered[j];
 
-          if ( star.planetId == _starId )
-            if ( starsHovered.indexOf( star.planetId ) < 0 ) {
+          if ( star.id == _starId )
+            if ( starsHovered.indexOf( star.id ) < 0 ) {
               star.mesh.glowMesh.visible = false;
               break;
             }
@@ -280,7 +441,7 @@ Game = function ( container ) {
   Game.prototype.update = function ( ctx ) {
 
     for ( var i = this.stars.length - 1; i >= 0; i-- ) {
-      this.stars[i].move( ctx );
+      this.stars[i].update( ctx );
     }
 
   };
@@ -306,9 +467,9 @@ Game = function ( container ) {
       radius: 50,
       rx: random( 1 ), ry: random( 1 ),
       //rsx: random( .05 ), rsy: random( .05 ),
-      //mat: "home",
+      //material: "home",
       rsx: Number.MIN_VALUE, rsy: Number.MIN_VALUE,
-      mat: { color: 0x77FF55, shading: THREE.FlatShading },
+      material: Materials.home,
       segW: 12, segH: 8, knead: .5
     } ),
     planets: [
@@ -349,7 +510,7 @@ Game = function ( container ) {
   this.stars.push( p );
   this.scene.add( p.mesh );
 
-  //console.log("Created " + p.mesh.name + " #" + p.planetId + ". proto=#" + Planet.prototype.planetId);
+  //console.log("Created " + p.mesh.name + " #" + p.id + ". proto=#" + Planet.prototype.id);
 
   // create satellites
   for ( var i = currentMap.planets.length - 1; i >= 0; i-- ) {
@@ -360,7 +521,7 @@ Game = function ( container ) {
 
     this.scene.add( p.mesh );
 
-    //console.log("Created " + p.mesh.name + " #" + p.planetId + ". proto=#" + Planet.prototype.planetId);
+    //console.log("Created " + p.mesh.name + " #" + p.id + ". proto=#" + Planet.prototype.id);
 
   };
 
@@ -378,7 +539,7 @@ Game = function ( container ) {
   */
 
   // set point lights
-  var lightZ = 500, lightXY = 750, lightColor = 0xFFFFFF, lightIntensity = .6, lightDistance = undefined;
+  var lightZ = 500, lightXY = 750, lightColor = Colors.white, lightIntensity = .6, lightDistance = undefined;
 
   var pointLight0 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
   pointLight0.position.set( -lightXY, lightXY, lightZ );
@@ -424,90 +585,20 @@ Game = function ( container ) {
 
 
   /**************
-   * TEST volume curves
+   * TEST volumetric curves
    */
-
-  var getControlPoints = function ( p0, p1, nbSeg) {
-    var pts = [],
-      cursor = p0.clone(),
-      n = p1.clone().sub( p0 ).divideScalar( nbSeg )
-    ;
-    
-    pts.push( p0 );
-
-    for ( var i = nbSeg - 1; i > 1; i-- ) {
-
-      cursor.add( n );
-
-      pts.push( cursor.clone() );
-
-    }
-
-    pts.push( p1.clone() );
-
-    return pts;
-  }
-
-  var getNoisePoints = function( controlPoints, amount ){
-    var pts = [], pt,
-      l = controlPoints.length - 2,
-      halfAmount = amount / 2
-    ;
-
-    pts.push(controlPoints[l+1]);
-
-    for ( var i = l; i > 1; i-- ) {
-
-      pt = controlPoints[i];
-
-      pts.push( new THREE.Vector3(
-        pt.x,
-        pt.y + random( amount ) - halfAmount,
-        pt.z + random( amount ) - halfAmount
-      ));
-    }
-
-    pts.push(controlPoints[0]);
-
-     return pts; 
-  }
-
-  var p0 = this.stars[0].mesh.position,
-      planetTarget = this.stars[Math.round(random( 1, this.stars.length - 1 ))],
-      p1 = planetTarget.mesh.position,
-      distance = p1.distanceTo(p0),
-      ctrlPts,
-      nbCtrlPts = Math.round(distance/30),
-      nbSeg = nbCtrlPts*5, radiusSeg = 3,
-      noiseAmount = 20
-  ;
-
-  ctrlPts = getControlPoints( p0, p1, nbCtrlPts );
   
-  thunderGeo = 
-    //new THREE.TubeGeometry( new THREE.LineCurve( p0, p1 ), 1, 1, radiusSeg, false )
-  //;
+  var target = this.stars[Math.round( random( 1, this.stars.length - 1 ) )].mesh;
 
-  //THREE.GeometryUtils.merge( thunderGeo,
-    new THREE.TubeGeometry(
-      new THREE.SplineCurve3(
-        getNoisePoints( ctrlPts, noiseAmount )
-      ), nbSeg, 2, radiusSeg, false
-    //)
+  var linkTest = new LinkCurves(
+    {
+      source: this.stars[0].mesh,
+      target: target,
+      material: target.material
+    }
   );
 
-  THREE.GeometryUtils.merge( thunderGeo,
-    new THREE.TubeGeometry(
-      new THREE.SplineCurve3(
-        getNoisePoints( ctrlPts, noiseAmount )
-      ), nbSeg, 2, radiusSeg, false
-    )
-  );
-  
-  this.scene.add( thunderMesh = new THREE.Mesh(
-    thunderGeo,
-    new THREE.MeshLambertMaterial( { color: planetTarget.material.color, opacity: 0.5, transparent: true } ) )
-  );
+  this.scene.add( linkTest.mesh );
 
   /**************/
 };
@@ -526,7 +617,7 @@ catch ( error ) {
   nogl.style.display = 'block';
 }
 
-if ( game != "undefined" )
+if ( window.game !== undefined )
   game.render();
 
 

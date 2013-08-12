@@ -79,7 +79,7 @@
 			"file": "index.html",
 			"settings":
 			{
-				"buffer_size": 1315,
+				"buffer_size": 1331,
 				"line_ending": "Windows"
 			}
 		},
@@ -95,8 +95,17 @@
 			"file": "index.js",
 			"settings":
 			{
-				"buffer_size": 15101,
+				"buffer_size": 15022,
 				"line_ending": "Windows"
+			}
+		},
+		{
+			"contents": "Guillaume,\nJe t’écris sans réellement savoir que t’écrire. Marek vient de m’apprendre ce qu’est arrivé à ta copine, et cela ne m’a pas laissée indifférente.  Je ne sais que dire, à part que j’ai une petite pensée pour Sabrina et toi. Je voulais par ce petit message envoyer mes encouragements (et peut-etre essayer aussi d’enterrer la hache de guerre) et te dire que si tu veux me parler (un jour) de quoi que ce soit, n’hésite pas. \nBises\n\nSalut Klara,\n\n  Marek m'a dit que tu m'avais écris, je n'utilise plus vraiment Facebook (mais je n'ai pas changé de mail). Merci pour ce message qui me touche beaucoup. En effet ca n'a / n'est pas facile. La chance a fait que ni sa tête ni aucun organe n'ait été touché. Puisque ca s'est passé en rentrant de l'université, l'assurance de l'université prend en charge; un autre point positif.\n\n  J'aimerai beaucoup enterrer cette hache. C'est difficile de ne pas hésiter pour te contacter car les derniers mots que tu m'avais écris étaient plein de haine envers moi. J'ai peur de t'offenser à chaque mot que je tape. Je ne pensais pas que tu voudrais jamais me recontacter mais j'aimerai enterrer cette hache et avoir de tes nouvelles.\n\n  Et je veux t'assurer que si tu as besoin de me parler, j'y suis aussi ouvert.\n\nBises Klara\n\ngpeugniez@gmail.com",
+			"settings":
+			{
+				"buffer_size": 1290,
+				"line_ending": "Windows",
+				"name": "Guillaume,"
 			}
 		}
 	],
@@ -223,15 +232,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1315,
+						"buffer_size": 1331,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								937,
-								937
+								933,
+								933
 							]
 						],
 						"settings":
@@ -241,7 +250,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 126.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -282,15 +291,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 15101,
+						"buffer_size": 15022,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								14000,
-								14000
+								0,
+								0
 							]
 						],
 						"settings":
@@ -302,7 +311,34 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 6871.0,
+						"translation.y": 2456.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1290,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1290,
+								1290
+							]
+						],
+						"settings":
+						{
+							"auto_name": "Guillaume,",
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
