@@ -30,6 +30,95 @@ window.requestAnimFrame = ( function () {
     };
 } )();
 
+// src: http://stemkoski.github.io/Three.js/Sprite-Text-Labels.html
+function makeTextSprite( param ) {
+
+  var makeText = function ( parameters ) {
+    if ( parameters === undefined ) parameters = {};
+
+    this.label = this.label || {};
+
+    var text = parameters.text || this.label.text;
+
+    var fontface = parameters.fontface || this.label.fontface || "Arial";
+
+    var fontsize = parameters.fontsize || this.label.fontsize || 18;
+
+    var fontColor = parameters.fontColor || this.label.fontColor || new THREE.Color( 0 );
+
+    var borderThickness = parameters.borderThickness || this.label.borderThickness || 4;
+
+    var borderColor = parameters.borderColor || this.label.borderColor || new THREE.Color( 0 );
+
+    var backgroundColor = parameters.backgroundColor || this.label.backgroundColor || new THREE.Color( 0xFFFFFF );
+
+    var spriteAlignment = THREE.SpriteAlignment.topLeft;
+
+    var canvas = document.createElement( 'canvas' );
+    var context = canvas.getContext( '2d' );
+    context.font = "Bold " + fontsize + "px " + fontface;
+
+    // get size data (height depends only on font size)
+    var metrics = context.measureText( text );
+    var textWidth = metrics.width;
+
+    // background color
+    context.fillStyle = backgroundColor.getStyle();
+    // border color
+    context.strokeStyle = borderColor.getStyle();
+
+    context.lineWidth = borderThickness;
+
+    var roundRect = function ( ctx, x, y, w, h, r ) {
+      ctx.beginPath();
+      ctx.moveTo( x + r, y );
+      ctx.lineTo( x + w - r, y );
+      ctx.quadraticCurveTo( x + w, y, x + w, y + r );
+      ctx.lineTo( x + w, y + h - r );
+      ctx.quadraticCurveTo( x + w, y + h, x + w - r, y + h );
+      ctx.lineTo( x + r, y + h );
+      ctx.quadraticCurveTo( x, y + h, x, y + h - r );
+      ctx.lineTo( x, y + r );
+      ctx.quadraticCurveTo( x, y, x + r, y );
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    };
+
+    roundRect( context, borderThickness / 2, borderThickness / 2, textWidth + borderThickness, fontsize * 1.4 + borderThickness, 6 );
+    // 1.4 is extra height factor for text below baseline: g,j,p,q.
+
+    // text color
+    context.fillStyle = fontColor.getStyle();
+
+    context.fillText( text, borderThickness, fontsize + borderThickness );
+
+    // canvas contents will be used for a texture
+    var texture = new THREE.Texture( canvas )
+    texture.needsUpdate = true;
+
+    this.material = new THREE.SpriteMaterial(
+      { map: texture, useScreenCoordinates: false, alignment: spriteAlignment } );
+
+    extend( this.label, {
+      text: text,
+      fontface: fontface, fontsize: fontsize, fontColor: fontColor,
+      borderThickness: borderThickness, borderColor: borderColor,
+      backgroundColor: backgroundColor
+    } );
+  };
+
+  var sprite = new THREE.Sprite();
+
+  makeText.call( sprite, param );
+
+  sprite.makeText = makeText.bind( sprite );
+
+  sprite.scale.set( 100, 50, 1.0 );
+
+  return sprite;
+}
+
 
 
 
@@ -125,6 +214,24 @@ Game = function ( container ) {
 
     this.mesh.name = "Planet" + this.id;
     this.mesh.glowMesh.name = this.mesh.name + "-" + "glowMesh";
+
+
+    var font = new THREE.Color( 0xFFFFFF ),
+        border = this.material.color.clone().offsetHSL( 0, 0, 0.1 ),
+        back = this.material.color.clone().offsetHSL( 0, 0, -0.3 )
+    ;
+    this.label = makeTextSprite(
+      {
+        fontsize: 24,
+        fontColor: font,
+        borderColor: border,
+        backgroundColor: back,
+        text: "init"
+      }
+    );
+    this.label.position.x = this.radius;
+    this.mesh.add( this.label );
+
   };
 
   Planet.prototype.id = 0;
@@ -196,7 +303,13 @@ Game = function ( container ) {
       v[random( ['x', 'y', 'z'] )] += random( r );
 
     }, this.mesh );
-  }
+  };
+
+  Planet.prototype.onClick = function( ctx, e ) {
+
+    console.log( "Planet#" + this.id + " onClick( " + game + ", " + e + " );" );
+
+  };
 
 
   var PlanetYellow = function ( param ) {
@@ -205,7 +318,7 @@ Game = function ( container ) {
     param.material = param.material || Materials.yellow;
 
     Planet.call( this, param );
-  }
+  };
 
   PlanetYellow.prototype = Object.create( Planet.prototype );
 
@@ -216,7 +329,7 @@ Game = function ( container ) {
     param.material = param.material || Materials.blue;
 
     Planet.call( this, param );
-  }
+  };
 
   PlanetBlue.prototype = Object.create( Planet.prototype );
 
@@ -227,7 +340,7 @@ Game = function ( container ) {
     param.material = param.material || Materials.red;
 
     Planet.call( this, param );
-  }
+  };
 
   PlanetRed.prototype = Object.create( Planet.prototype );
 
@@ -261,7 +374,7 @@ Game = function ( container ) {
 
     this.rotation.setEulerFromRotationMatrix(this.matrix);
     */
-  }
+  };
 
 
   var LinkCurves = function ( param ) {
@@ -351,7 +464,7 @@ Game = function ( container ) {
       geometry,
       this.material
     );
-  }
+  };
 
   LinkCurves.prototype = Object.create( Link.prototype );
 
@@ -377,18 +490,17 @@ Game = function ( container ) {
     var x = e.clientX - this.CANVAS_WIDTH / 2,
         y = -e.clientY + this.CANVAS_HEIGHT / 2,
         mouseVec3 = new THREE.Vector3( x, y, 0 ),
-        _starsHovered = starsHovered,
-        // loop vars
+        _starsHovered = starsHovered, starId,
         star, d, r
     ;
 
-    starsHovered = [];
-
     for ( i in this.stars ) {
       star = this.stars[i];
+      starId = star.id;
       d = star.mesh.position.distanceTo( mouseVec3 );
       r = star.mesh.geometry.boundingSphere.radius;
 
+      star.label.makeText( { text: Math.round(d) } );
       //if(i==0) console.log(d + " << " + JSON.stringify(mouseVec3) );
 
       if ( d < r ) {
@@ -399,12 +511,12 @@ Game = function ( container ) {
 
     if ( _starsHovered.length > 0 )
       for ( i in this.stars ) {
-        var star = this.stars[i];
+        star = this.stars[i];
 
         for ( j in _starsHovered ) {
-          var _starId = _starsHovered[j];
+          starId = _starsHovered[j];
 
-          if ( star.id == _starId )
+          if ( star.id == starId )
             if ( starsHovered.indexOf( star.id ) < 0 ) {
               star.mesh.glowMesh.visible = false;
               break;
@@ -421,19 +533,19 @@ Game = function ( container ) {
   };
 
 
-  Game.prototype.resizeContainer = function () {
+  var resizeContainer = function () {
 
-    CANVAS_WIDTH = window.innerWidth - 5;
-    CANVAS_HEIGHT = window.innerHeight - 5;
+    this.CANVAS_WIDTH = window.innerWidth - 5;
+    this.CANVAS_HEIGHT = window.innerHeight - 5;
 
-    this.renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
+    this.renderer.setSize( this.CANVAS_WIDTH, this.CANVAS_HEIGHT );
 
-    this.camera.left = CANVAS_WIDTH / -2;
-    this.camera.right = CANVAS_WIDTH / 2;
-    this.camera.top = CANVAS_HEIGHT / 2;
-    this.camera.bottom = CANVAS_HEIGHT / -2;
+    this.camera.left = this.CANVAS_WIDTH / -2;
+    this.camera.right = this.CANVAS_WIDTH / 2;
+    this.camera.top = this.CANVAS_HEIGHT / 2;
+    this.camera.bottom = this.CANVAS_HEIGHT / -2;
 
-    this.camera.aspect = CANVAS_WIDTH / CANVAS_HEIGHT;
+    this.camera.aspect = this.CANVAS_WIDTH / this.CANVAS_HEIGHT;
 
     this.camera.updateProjectionMatrix();
   };
@@ -491,8 +603,7 @@ Game = function ( container ) {
   this.CANVAS_HEIGHT = window.innerHeight - 5;
   //this.CANVAS_WIDTH = container.clientWidth;
   //this.CANVAS_HEIGHT = container.clientHeight;
-
-
+  
   this.renderer = new THREE.WebGLRenderer();
 
   this.renderer.setSize( this.CANVAS_WIDTH, this.CANVAS_HEIGHT );
@@ -500,15 +611,15 @@ Game = function ( container ) {
   this.container.appendChild( this.renderer.domElement );
 
   this.scene = new THREE.Scene();
-
-
+  
   this.stars = [];
+  
   var currentMap = this.map[this.currentMapIndex];
 
   // create home
-  var p = currentMap.home;
-  this.stars.push( p );
-  this.scene.add( p.mesh );
+  this.home = currentMap.home;
+  
+  this.scene.add( this.home.mesh );
 
   //console.log("Created " + p.mesh.name + " #" + p.id + ". proto=#" + Planet.prototype.id);
 
@@ -539,7 +650,7 @@ Game = function ( container ) {
   */
 
   // set point lights
-  var lightZ = 500, lightXY = 750, lightColor = Colors.white, lightIntensity = .6, lightDistance = undefined;
+  var lightZ = 500, lightXY = 250, lightColor = Colors.white, lightIntensity = .4, lightDistance = undefined;
 
   var pointLight0 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
   pointLight0.position.set( -lightXY, lightXY, lightZ );
@@ -565,7 +676,7 @@ Game = function ( container ) {
   scene.add(ambientLight);
   */
 
-  window.addEventListener( 'resize', this.resizeContainer.bind( this ) );
+  window.addEventListener( 'resize', resizeContainer.bind( this ) );
 
   window.addEventListener( 'mousewheel', mouseWheel.bind( this ) );
 
@@ -592,7 +703,7 @@ Game = function ( container ) {
 
   var linkTest = new LinkCurves(
     {
-      source: this.stars[0].mesh,
+      source: this.home.mesh,
       target: target,
       material: target.material
     }
