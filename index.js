@@ -106,6 +106,8 @@ function makeTextSprite( param ) {
       borderThickness: borderThickness, borderColor: borderColor,
       backgroundColor: backgroundColor
     } );
+
+    sprite.visible = true;
   };
 
   var sprite = new THREE.Sprite();
@@ -116,10 +118,13 @@ function makeTextSprite( param ) {
 
   sprite.scale.set( 100, 50, 1.0 );
 
+  sprite.visible = false;
+
   return sprite;
 }
 
 
+window.mouse = { x: 0, y: 0 };
 
 
 Game = function ( container ) {
@@ -159,15 +164,155 @@ Game = function ( container ) {
   };
 
 
-  /**********************
-   *
-   *
-   *        Planet
-   *
-   *
-   **********************/
+// src: http://patorjk.com/software/taag/#p=display&v=2&f=Doh&t=Game
 
-  var Planet = function ( param ) {
+/**********************************************************************************************************
+                                                                                   
+        GGGGGGGGGGGGG                                                              
+     GGG::::::::::::G                                                              
+   GG:::::::::::::::G                                                              
+  G:::::GGGGGGGG::::G                                                              
+ G:::::G       GGGGGG  aaaaaaaaaaaaa      mmmmmmm    mmmmmmm       eeeeeeeeeeee    
+G:::::G                a::::::::::::a   mm:::::::m  m:::::::mm   ee::::::::::::ee  
+G:::::G                aaaaaaaaa:::::a m::::::::::mm::::::::::m e::::::eeeee:::::ee
+G:::::G    GGGGGGGGGG           a::::a m::::::::::::::::::::::me::::::e     e:::::e
+G:::::G    G::::::::G    aaaaaaa:::::a m:::::mmm::::::mmm:::::me:::::::eeeee::::::e
+G:::::G    GGGGG::::G  aa::::::::::::a m::::m   m::::m   m::::me:::::::::::::::::e 
+G:::::G        G::::G a::::aaaa::::::a m::::m   m::::m   m::::me::::::eeeeeeeeeee  
+ G:::::G       G::::Ga::::a    a:::::a m::::m   m::::m   m::::me:::::::e           
+  G:::::GGGGGGGG::::Ga::::a    a:::::a m::::m   m::::m   m::::me::::::::e          
+   GG:::::::::::::::Ga:::::aaaa::::::a m::::m   m::::m   m::::m e::::::::eeeeeeee  
+     GGG::::::GGG:::G a::::::::::aa:::am::::m   m::::m   m::::m  ee:::::::::::::e  
+        GGGGGG   GGGG  aaaaaaaaaa  aaaammmmmm   mmmmmm   mmmmmm    eeeeeeeeeeeeee  
+
+*/
+
+  var mouseMove = function ( e ) {
+    mouse.x = ( event.clientX / this.CANVAS_WIDTH ) * 2 - 1;
+    mouse.y = -( event.clientY / this.CANVAS_HEIGHT ) * 2 + 1;
+  }
+
+  var mouseWheel = function ( e ) {
+    this.camera.fov -= e.wheelDelta / 10;
+
+    this.camera.updateProjectionMatrix();
+  };
+
+
+  var resizeContainer = function () {
+
+    this.CANVAS_WIDTH = window.innerWidth - 5;
+    this.CANVAS_HEIGHT = window.innerHeight - 5;
+
+    this.renderer.setSize( this.CANVAS_WIDTH, this.CANVAS_HEIGHT );
+
+    this.camera.left = this.CANVAS_WIDTH / -2;
+    this.camera.right = this.CANVAS_WIDTH / 2;
+    this.camera.top = this.CANVAS_HEIGHT / 2;
+    this.camera.bottom = this.CANVAS_HEIGHT / -2;
+
+    this.camera.aspect = this.CANVAS_WIDTH / this.CANVAS_HEIGHT;
+
+    this.camera.updateProjectionMatrix();
+  };
+
+
+  // vars for mouseMove
+  var ray = new THREE.Raycaster();
+  var projector = new THREE.Projector();
+  var directionVector = new THREE.Vector3();
+
+  Game.prototype.processMousePosition = function () {
+
+    // create a Ray with origin at the mouse position
+    //   and direction into the scene (camera direction)
+    directionVector = new THREE.Vector3( mouse.x, mouse.y, 1 );
+    projector.unprojectVector( directionVector, this.camera );
+    ray = new THREE.Raycaster( this.camera.position, directionVector.sub( this.camera.position ).normalize() );
+
+    // create an array containing all objects in the scene with which the ray intersects
+    this.mouse.intersects = ray.intersectObjects( this.scene.children );
+
+    this.mouse.planetIdHovered = [];
+
+    this.mouse.intersects.forEach( function ( intersection ) {
+      if ( intersection.object.planetId !== undefined ) { // Game.Planet.mesh has a planetId field
+        this.mouse.planetIdHovered.push( intersection.object.planetId );
+      }
+    }, this );
+
+
+
+
+    /**********
+     * TEST
+     */
+    if ( this.rayHelper.vOffsets == undefined ) {
+      this.rayHelper.vOffsets = this.rayHelper.geometry.vertices.slice( 3, 6 );
+    }
+
+    var rayOrigin = ray.ray.origin.clone();
+
+    var step = ray.ray.direction.clone().multiplyScalar( 5 );
+    var newTarget = rayOrigin.add( step );
+    while ( newTarget.z > 0 ) { newTarget.add( step ); }
+
+    this.rayHelper.geometry.vertices[3] = newTarget.clone().add( this.rayHelper.vOffsets[0] );
+    this.rayHelper.geometry.vertices[4] = newTarget.clone().add( this.rayHelper.vOffsets[1] );
+    this.rayHelper.geometry.vertices[5] = newTarget.clone().add( this.rayHelper.vOffsets[2] );
+
+    this.rayHelper.geometry.verticesNeedUpdate = true;
+
+  };
+
+  Game.prototype.update = function () {
+
+    if ( mouse.x != this.mouse.x || mouse.y != this.mouse.y ) {
+      this.mouse.x = mouse.x;
+      this.mouse.y = mouse.y;
+      this.processMousePosition();
+    }
+
+    for ( var i = this.stars.length - 1; i >= 0; i-- ) {
+      this.stars[i].update( this );
+    }
+
+  };
+
+  Game.prototype.render = function () {
+
+    window.requestAnimFrame( this.render.bind( this ) );
+
+    this.update();
+
+    this.renderer.render( this.scene, this.camera );
+
+  };
+
+
+
+/**********************************************************************************************************
+                                                                                                          
+PPPPPPPPPPPPPPPPP   lllllll                                                                 tttt          
+P::::::::::::::::P  l:::::l                                                              ttt:::t          
+P::::::PPPPPP:::::P l:::::l                                                              t:::::t          
+PP:::::P     P:::::Pl:::::l                                                              t:::::t          
+  P::::P     P:::::P l::::l   aaaaaaaaaaaaa  nnnn  nnnnnnnn        eeeeeeeeeeee    ttttttt:::::ttttttt    
+  P::::P     P:::::P l::::l   a::::::::::::a n:::nn::::::::nn    ee::::::::::::ee  t:::::::::::::::::t    
+  P::::PPPPPP:::::P  l::::l   aaaaaaaaa:::::an::::::::::::::nn  e::::::eeeee:::::eet:::::::::::::::::t    
+  P:::::::::::::PP   l::::l            a::::ann:::::::::::::::ne::::::e     e:::::etttttt:::::::tttttt    
+  P::::PPPPPPPPP     l::::l     aaaaaaa:::::a  n:::::nnnn:::::ne:::::::eeeee::::::e      t:::::t          
+  P::::P             l::::l   aa::::::::::::a  n::::n    n::::ne:::::::::::::::::e       t:::::t          
+  P::::P             l::::l  a::::aaaa::::::a  n::::n    n::::ne::::::eeeeeeeeeee        t:::::t          
+  P::::P             l::::l a::::a    a:::::a  n::::n    n::::ne:::::::e                 t:::::t    tttttt
+PP::::::PP          l::::::la::::a    a:::::a  n::::n    n::::ne::::::::e                t::::::tttt:::::t
+P::::::::P          l::::::la:::::aaaa::::::a  n::::n    n::::n e::::::::eeeeeeee        tt::::::::::::::t
+P::::::::P          l::::::l a::::::::::aa:::a n::::n    n::::n  ee:::::::::::::e          tt:::::::::::tt
+PPPPPPPPPP          llllllll  aaaaaaaaaa  aaaa nnnnnn    nnnnnn    eeeeeeeeeeeeee            ttttttttttt  
+                                                                                                          
+*/
+
+  Game.Planet = function ( param ) {
     param = param || {};
 
     this.mouseable = param.mouseable || true;
@@ -189,7 +334,7 @@ Game = function ( container ) {
     this.segW = param.segW || random( 5, 10 );
     this.segH = param.segH || random( 5, 10 );
 
-    if ( param.material === undefined || !(param.material instanceof THREE.Material) ) {
+    if ( param.material === undefined || !( param.material instanceof THREE.Material ) ) {
       param.material = Materials.white;
     }
 
@@ -210,9 +355,9 @@ Game = function ( container ) {
 
     this.knead( param.knead || .5 );
 
-    this.id = this.mesh.id = Planet.prototype.id++;
+    this.planetId = this.mesh.planetId = Game.Planet.prototype.planetId++;
 
-    this.mesh.name = "Planet" + this.id;
+    this.mesh.name = "Planet" + this.planetId;
     this.mesh.glowMesh.name = this.mesh.name + "-" + "glowMesh";
 
 
@@ -229,35 +374,35 @@ Game = function ( container ) {
         text: "init"
       }
     );
-    this.label.position.x = this.radius;
+
     this.mesh.add( this.label );
 
   };
 
-  Planet.prototype.id = 0;
+  Game.Planet.prototype.planetId = 0;
 
-  Planet.prototype.links = [];
+  Game.Planet.prototype.links = [];
 
-  Planet.prototype.initGlow = function ( mesh ) {
+  Game.Planet.prototype.initGlow = function ( mesh ) {
 
-    var matGlow = new THREE.ShaderMaterial(
-      {
-        uniforms:
-        {
-          glowColor: { type: "v3", value: mesh.material.color },
-          power: { type: "f", value: 1 }
-        },
-        vertexShader: document.getElementById( 'vsGlow' ).textContent,
-        fragmentShader: document.getElementById( 'fsGlow' ).textContent,
-        side: THREE.BackSide,
-        blending: THREE.AdditiveBlending,
-        transparent: true
-      }
-    );
+    //var mat = new THREE.ShaderMaterial(
+    //  {
+    //    uniforms:
+    //    {
+    //      glowColor: { type: "v3", value: mesh.material.color },
+    //      power: { type: "f", value: 1 }
+    //    },
+    //    vertexShader: document.getElementById( 'vsGlow' ).textContent,
+    //    fragmentShader: document.getElementById( 'fsGlow' ).textContent,
+    //    side: THREE.BackSide,
+    //    blending: THREE.AdditiveBlending,
+    //    transparent: true
+    //  }
+    //);
+    var mat = new THREE.MeshLambertMaterial( { color: Colors.white, transparent: true, opacity: 0.5, side: THREE.BackSide } );
     var geom = new THREE.SphereGeometry( mesh.geometry.radius, 30, 30 );
-    //var geom = mesh.geometry.clone();
 
-    var glowMesh = new THREE.Mesh( geom, matGlow );
+    var glowMesh = new THREE.Mesh( geom, mat );
     glowMesh.scale.x = glowMesh.scale.y = glowMesh.scale.z = 1.5;
     glowMesh.visible = false;
 
@@ -266,7 +411,7 @@ Game = function ( container ) {
     return glowMesh;
   };
 
-  Planet.prototype.update = function ( ctx ) {
+  Game.Planet.prototype.update = function ( ctx ) {
 
     if ( this.free ) {
 
@@ -280,10 +425,25 @@ Game = function ( container ) {
     this.mesh.rotation.x += this.rsx;
     this.mesh.rotation.y += this.rsy;
 
-    this.links.forEach( function(link){ link.update( ctx ); } );
+    if ( ctx.mouse.planetIdHovered.indexOf( this.planetId ) >= 0 ) {
+      this.mesh.glowMesh.visible = true;
+
+      //this.mouse.intersects.every( function ( o ) {
+      //  if ( o.object.planetId == this.id ) {
+
+      //    return false;
+      //  }
+      //  return true;
+      //} );
+    }
+    else {
+      this.mesh.glowMesh.visible = false;
+    }
+
+    this.links.forEach( function ( link ) { link.update( ctx ); } );
   };
 
-  Planet.prototype.knead = function ( min, max ) {
+  Game.Planet.prototype.knead = function ( min, max ) {
     // rq: careful this is in not correct and only work for a planet at the origin
 
     if ( min === undefined ) return;
@@ -305,65 +465,74 @@ Game = function ( container ) {
     }, this.mesh );
   };
 
-  Planet.prototype.onClick = function( ctx, e ) {
+  Game.Planet.prototype.onClick = function ( ctx, e ) {
 
     console.log( "Planet#" + this.id + " onClick( " + game + ", " + e + " );" );
 
   };
 
 
-  var PlanetYellow = function ( param ) {
+  Game.PlanetYellow = function ( param ) {
 
     param = param || {};
     param.material = param.material || Materials.yellow;
 
-    Planet.call( this, param );
+    Game.Planet.call( this, param );
   };
+  Game.PlanetYellow.prototype = Object.create( Game.Planet.prototype );
 
-  PlanetYellow.prototype = Object.create( Planet.prototype );
 
-
-  var PlanetBlue = function ( param ) {
+  Game.PlanetBlue = function ( param ) {
 
     param = param || {};
     param.material = param.material || Materials.blue;
 
-    Planet.call( this, param );
+    Game.Planet.call( this, param );
   };
+  Game.PlanetBlue.prototype = Object.create( Game.Planet.prototype );
 
-  PlanetBlue.prototype = Object.create( Planet.prototype );
-
-
-  var PlanetRed = function ( param ) {
+  Game.PlanetRed = function ( param ) {
 
     param = param || {};
     param.material = param.material || Materials.red;
 
-    Planet.call( this, param );
+    Game.Planet.call( this, param );
   };
-
-  PlanetRed.prototype = Object.create( Planet.prototype );
-
-  
-
-  /**********************
-   *
-   *
-   *        Link
-   *
-   *
-   **********************/
+  Game.PlanetRed.prototype = Object.create( Game.Planet.prototype );
 
 
-  var Link = function ( param ) {
-    
+
+/**********************************************************************************************************
+
+LLLLLLLLLLL               iiii                   kkkkkkkk           
+L:::::::::L              i::::i                  k::::::k           
+L:::::::::L               iiii                   k::::::k           
+LL:::::::LL                                      k::::::k           
+  L:::::L               iiiiiiinnnn  nnnnnnnn     k:::::k    kkkkkkk
+  L:::::L               i:::::in:::nn::::::::nn   k:::::k   k:::::k 
+  L:::::L                i::::in::::::::::::::nn  k:::::k  k:::::k  
+  L:::::L                i::::inn:::::::::::::::n k:::::k k:::::k   
+  L:::::L                i::::i  n:::::nnnn:::::n k::::::k:::::k    
+  L:::::L                i::::i  n::::n    n::::n k:::::::::::k     
+  L:::::L                i::::i  n::::n    n::::n k:::::::::::k     
+  L:::::L         LLLLLL i::::i  n::::n    n::::n k::::::k:::::k    
+LL:::::::LLLLLLLLL:::::Li::::::i n::::n    n::::nk::::::k k:::::k   
+L::::::::::::::::::::::Li::::::i n::::n    n::::nk::::::k  k:::::k  
+L::::::::::::::::::::::Li::::::i n::::n    n::::nk::::::k   k:::::k 
+LLLLLLLLLLLLLLLLLLLLLLLLiiiiiiii nnnnnn    nnnnnnkkkkkkkk    kkkkkkk
+   
+*/
+
+
+  Game.Link = function ( param ) {
+
     param = param || {};
-    this.id = Link.prototype.id++;
+    this.id = Game.Link.prototype.id++;
   };
 
-  Link.prototype.id = 0;
+  Game.Link.prototype.id = 0;
 
-  Link.prototype.update = function ( ctx ) {
+  Game.Link.prototype.update = function ( ctx ) {
     /*
     var axis, radians;
 
@@ -377,24 +546,24 @@ Game = function ( container ) {
   };
 
 
-  var LinkCurves = function ( param ) {
+  Game.LinkCurves = function ( param ) {
 
     if ( typeof param === "undefined" || param.source === undefined || param.target === undefined )
       return;
 
-    Link.call( this, param );
+    Game.Link.call( this, param );
 
     this.source = param.source;
     this.target = param.target;
 
     this.material = param.material || Materials.default;
 
-    var getControlPoints = function ( p0, p1, nbSeg) {
+    var getControlPoints = function ( p0, p1, nbSeg ) {
       var pts = [],
         cursor = p0.clone(),
         n = p1.clone().sub( p0 ).divideScalar( nbSeg )
       ;
-    
+
       pts.push( p0 );
 
       for ( var i = nbSeg - 1; i > 1; i-- ) {
@@ -410,13 +579,13 @@ Game = function ( container ) {
       return pts;
     }
 
-    var getNoisePoints = function( controlPoints, amount ){
+    var getNoisePoints = function ( controlPoints, amount ) {
       var pts = [], pt,
         l = controlPoints.length - 2,
         halfAmount = amount / 2
       ;
 
-      pts.push(controlPoints[l+1]);
+      pts.push( controlPoints[l + 1] );
 
       for ( var i = l; i > 1; i-- ) {
 
@@ -426,12 +595,12 @@ Game = function ( container ) {
           pt.x,
           pt.y + random( amount ) - halfAmount,
           pt.z + random( amount ) - halfAmount
-        ));
+        ) );
       }
 
-      pts.push(controlPoints[0]);
+      pts.push( controlPoints[0] );
 
-      return pts; 
+      return pts;
     }
 
     var p0 = this.source.position,
@@ -466,107 +635,11 @@ Game = function ( container ) {
     );
   };
 
-  LinkCurves.prototype = Object.create( Link.prototype );
-
-  
-
-  /**********************
-   *
-   *
-   *        Game
-   *
-   *
-   **********************/
+  Game.LinkCurves.prototype = Object.create( Game.Link.prototype );
 
 
-  // vars for mouseMove
-  var ray = new THREE.Raycaster();
-  var projector = new THREE.Projector();
-  var directionVector = new THREE.Vector3();
-  var starsHovered = []; // id of the star currently hovered
-
-  var mouseMove = function ( e ) {
-
-    var x = e.clientX - this.CANVAS_WIDTH / 2,
-        y = -e.clientY + this.CANVAS_HEIGHT / 2,
-        mouseVec3 = new THREE.Vector3( x, y, 0 ),
-        _starsHovered = starsHovered, starId,
-        star, d, r
-    ;
-
-    for ( i in this.stars ) {
-      star = this.stars[i];
-      starId = star.id;
-      d = star.mesh.position.distanceTo( mouseVec3 );
-      r = star.mesh.geometry.boundingSphere.radius;
-
-      star.label.makeText( { text: Math.round(d) } );
-      //if(i==0) console.log(d + " << " + JSON.stringify(mouseVec3) );
-
-      if ( d < r ) {
-        starsHovered.push( star.id );
-        star.mesh.glowMesh.visible = true;
-      }
-    }
-
-    if ( _starsHovered.length > 0 )
-      for ( i in this.stars ) {
-        star = this.stars[i];
-
-        for ( j in _starsHovered ) {
-          starId = _starsHovered[j];
-
-          if ( star.id == starId )
-            if ( starsHovered.indexOf( star.id ) < 0 ) {
-              star.mesh.glowMesh.visible = false;
-              break;
-            }
-        }
-      }
-
-  };
-
-  var mouseWheel = function ( e ) {
-    this.camera.fov -= e.wheelDelta / 10;
-
-    this.camera.updateProjectionMatrix();
-  };
 
 
-  var resizeContainer = function () {
-
-    this.CANVAS_WIDTH = window.innerWidth - 5;
-    this.CANVAS_HEIGHT = window.innerHeight - 5;
-
-    this.renderer.setSize( this.CANVAS_WIDTH, this.CANVAS_HEIGHT );
-
-    this.camera.left = this.CANVAS_WIDTH / -2;
-    this.camera.right = this.CANVAS_WIDTH / 2;
-    this.camera.top = this.CANVAS_HEIGHT / 2;
-    this.camera.bottom = this.CANVAS_HEIGHT / -2;
-
-    this.camera.aspect = this.CANVAS_WIDTH / this.CANVAS_HEIGHT;
-
-    this.camera.updateProjectionMatrix();
-  };
-
-  Game.prototype.update = function ( ctx ) {
-
-    for ( var i = this.stars.length - 1; i >= 0; i-- ) {
-      this.stars[i].update( ctx );
-    }
-
-  };
-
-  Game.prototype.render = function () {
-
-    window.requestAnimFrame( this.render.bind( this ) );
-
-    this.update( this );
-
-    this.renderer.render( this.scene, this.camera );
-
-  };
 
 
   /**********
@@ -575,7 +648,7 @@ Game = function ( container ) {
 
   this.map = [{
     name: "0",
-    home: new Planet( {
+    home: new Game.Planet( {
       radius: 50,
       rx: random( 1 ), ry: random( 1 ),
       //rsx: random( .05 ), rsy: random( .05 ),
@@ -585,12 +658,12 @@ Game = function ( container ) {
       segW: 12, segH: 8, knead: .5
     } ),
     planets: [
-      new PlanetRed( { x: -150, y: 150 } ),
-      new PlanetRed( { x: 200, y: 20 } ),
-      new PlanetYellow( { x: -200, y: -200 } ),
-      new PlanetYellow( { x: 150, y: 200 } ),
-      new PlanetBlue( { x: 500, y: -250 } ),
-      new PlanetBlue( { x: -500, y: 100 } )
+      new Game.PlanetRed( { x: -150, y: 150 } ),
+      new Game.PlanetRed( { x: 200, y: 20 } ),
+      new Game.PlanetYellow( { x: -200, y: -200 } ),
+      new Game.PlanetYellow( { x: 150, y: 200 } ),
+      new Game.PlanetBlue( { x: 500, y: -250 } ),
+      new Game.PlanetBlue( { x: -500, y: 100 } )
     ]
   }];
 
@@ -603,22 +676,24 @@ Game = function ( container ) {
   this.CANVAS_HEIGHT = window.innerHeight - 5;
   //this.CANVAS_WIDTH = container.clientWidth;
   //this.CANVAS_HEIGHT = container.clientHeight;
-  
+
   this.renderer = new THREE.WebGLRenderer();
 
   this.renderer.setSize( this.CANVAS_WIDTH, this.CANVAS_HEIGHT );
 
   this.container.appendChild( this.renderer.domElement );
 
+  this.mouse = { x: 0, y: 0, intersects: [], planetIdHovered: [] };
+
   this.scene = new THREE.Scene();
-  
+
   this.stars = [];
-  
+
   var currentMap = this.map[this.currentMapIndex];
 
   // create home
   this.home = currentMap.home;
-  
+  this.stars.push( this.home );
   this.scene.add( this.home.mesh );
 
   //console.log("Created " + p.mesh.name + " #" + p.id + ". proto=#" + Planet.prototype.id);
@@ -641,34 +716,53 @@ Game = function ( container ) {
     var hemiLight = new THREE.HemisphereLight( 0xffffff, 0xdddddd, .6 );
     scene.add( hemiLight );
   */
-  /*
-    // set a directional light
-    var directionalLight = new THREE.DirectionalLight( 0xdddddd, 1 );
-    directionalLight.position.z = 1000;
-    directionalLight.name = "directionalLight";
-    scene.add( directionalLight );
-  */
+
+  // set a directional light
+  //var directionalLight = new THREE.DirectionalLight( 0xffffff, .75 );
+  //directionalLight.direction = new THREE.Vector3( 0, 0, -1 );
+  //directionalLight.position.z = 500;
+  //directionalLight.name = "directionalLight";
+  //this.scene.add( directionalLight );
+
+  var pointLight0 = new THREE.PointLight( 0xffffff, 1 );
+  pointLight0.position.set( 0, 0, 500 );
+  pointLight0.name = "pointLight0";
+  this.scene.add( pointLight0 );
+
 
   // set point lights
-  var lightZ = 500, lightXY = 250, lightColor = Colors.white, lightIntensity = .4, lightDistance = undefined;
+  var
+    lightZ = 0,
+    lightXY = 400,
+    lightColor = Colors.white,
+    lightIntensity = .4,
+    lightDistance = undefined,
+    lightHelpers = false;
+  ;
 
   var pointLight0 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
   pointLight0.position.set( -lightXY, lightXY, lightZ );
   pointLight0.name = "pointLight0";
-  this.scene.add( pointLight0 );
+  this.scene.add( pointLight0 ); if ( lightHelpers )
+    this.scene.add( new THREE.PointLightHelper( pointLight0, 10 ) );
 
   var pointLight1 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
   pointLight1.position.set( lightXY, lightXY, lightZ );
   pointLight1.name = "pointLight0";
-  this.scene.add( pointLight1 );
+  this.scene.add( pointLight1 ); if ( lightHelpers )
+    this.scene.add( new THREE.PointLightHelper( pointLight1, 10 ) );
+
   var pointLight2 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
   pointLight2.position.set( lightXY, -lightXY, lightZ );
   pointLight2.name = "pointLight0";
-  this.scene.add( pointLight2 );
+  this.scene.add( pointLight2 ); if ( lightHelpers )
+    this.scene.add( new THREE.PointLightHelper( pointLight2, 10 ) );
+
   var pointLight3 = new THREE.PointLight( lightColor, lightIntensity, lightDistance );
   pointLight3.position.set( -lightXY, -lightXY, lightZ );
   pointLight3.name = "pointLight3";
-  this.scene.add( pointLight3 );
+  this.scene.add( pointLight3 ); if ( lightHelpers )
+    this.scene.add( new THREE.PointLightHelper( pointLight3, 10 ) );
 
   /*
   var ambientLight = new THREE.AmbientLight( 0x444444 );
@@ -687,8 +781,16 @@ Game = function ( container ) {
       height = this.CANVAS_HEIGHT;
 
   //this.camera = new THREE.OrthographicCamera( width / -2, width / 2, height / 2, height / -2, -100, 600 );
-  this.camera = new THREE.PerspectiveCamera( 80, width / height, 1, 600 );
-  this.camera.position.z = 500;
+
+  this.camera = new THREE.PerspectiveCamera( 90, width / height, 1, 600 );
+  this.camera.position.set( 0, 0, 500 );
+
+  //var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
+  //var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
+  //this.camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR );
+  //this.scene.add( this.camera );
+  //this.camera.position.set( 0, 150, 400 );
+  //this.camera.lookAt( this.scene.position );
 
 
 
@@ -698,10 +800,10 @@ Game = function ( container ) {
   /**************
    * TEST volumetric curves
    */
-  
+
   var target = this.stars[Math.round( random( 1, this.stars.length - 1 ) )].mesh;
 
-  var linkTest = new LinkCurves(
+  var linkTest = new Game.LinkCurves(
     {
       source: this.home.mesh,
       target: target,
@@ -710,6 +812,23 @@ Game = function ( container ) {
   );
 
   this.scene.add( linkTest.mesh );
+
+
+  /**************
+   * TEST ray picking helper
+   */
+
+  this.scene.add(
+    this.rayHelper =
+    new THREE.Mesh(
+      new THREE.TubeGeometry(
+        new THREE.LineCurve( this.camera.position.clone().add( new THREE.Vector3( 0, -20, 0 ) ), this.home.mesh.position ),
+        /*segments*/1, /*radius*/5, /*segments radius*/3, /*closed*/false, /*debug*/true
+      ),
+      Materials.red
+    )
+  );
+  this.rayHelper.visible = false;
 
   /**************/
 };
