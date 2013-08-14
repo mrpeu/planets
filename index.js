@@ -164,28 +164,28 @@ Game = function ( container ) {
   };
 
 
-// src: http://patorjk.com/software/taag/#p=display&v=2&f=Doh&t=Game
+  // src: http://patorjk.com/software/taag/#p=display&v=2&f=Doh&t=Game
 
-/**********************************************************************************************************
-                                                                                   
-        GGGGGGGGGGGGG                                                              
-     GGG::::::::::::G                                                              
-   GG:::::::::::::::G                                                              
-  G:::::GGGGGGGG::::G                                                              
- G:::::G       GGGGGG  aaaaaaaaaaaaa      mmmmmmm    mmmmmmm       eeeeeeeeeeee    
-G:::::G                a::::::::::::a   mm:::::::m  m:::::::mm   ee::::::::::::ee  
-G:::::G                aaaaaaaaa:::::a m::::::::::mm::::::::::m e::::::eeeee:::::ee
-G:::::G    GGGGGGGGGG           a::::a m::::::::::::::::::::::me::::::e     e:::::e
-G:::::G    G::::::::G    aaaaaaa:::::a m:::::mmm::::::mmm:::::me:::::::eeeee::::::e
-G:::::G    GGGGG::::G  aa::::::::::::a m::::m   m::::m   m::::me:::::::::::::::::e 
-G:::::G        G::::G a::::aaaa::::::a m::::m   m::::m   m::::me::::::eeeeeeeeeee  
- G:::::G       G::::Ga::::a    a:::::a m::::m   m::::m   m::::me:::::::e           
-  G:::::GGGGGGGG::::Ga::::a    a:::::a m::::m   m::::m   m::::me::::::::e          
-   GG:::::::::::::::Ga:::::aaaa::::::a m::::m   m::::m   m::::m e::::::::eeeeeeee  
-     GGG::::::GGG:::G a::::::::::aa:::am::::m   m::::m   m::::m  ee:::::::::::::e  
-        GGGGGG   GGGG  aaaaaaaaaa  aaaammmmmm   mmmmmm   mmmmmm    eeeeeeeeeeeeee  
-
-*/
+  /**********************************************************************************************************
+                                                                                     
+          GGGGGGGGGGGGG                                                              
+       GGG::::::::::::G                                                              
+     GG:::::::::::::::G                                                              
+    G:::::GGGGGGGG::::G                                                              
+   G:::::G       GGGGGG  aaaaaaaaaaaaa      mmmmmmm    mmmmmmm       eeeeeeeeeeee    
+  G:::::G                a::::::::::::a   mm:::::::m  m:::::::mm   ee::::::::::::ee  
+  G:::::G                aaaaaaaaa:::::a m::::::::::mm::::::::::m e::::::eeeee:::::ee
+  G:::::G    GGGGGGGGGG           a::::a m::::::::::::::::::::::me::::::e     e:::::e
+  G:::::G    G::::::::G    aaaaaaa:::::a m:::::mmm::::::mmm:::::me:::::::eeeee::::::e
+  G:::::G    GGGGG::::G  aa::::::::::::a m::::m   m::::m   m::::me:::::::::::::::::e 
+  G:::::G        G::::G a::::aaaa::::::a m::::m   m::::m   m::::me::::::eeeeeeeeeee  
+   G:::::G       G::::Ga::::a    a:::::a m::::m   m::::m   m::::me:::::::e           
+    G:::::GGGGGGGG::::Ga::::a    a:::::a m::::m   m::::m   m::::me::::::::e          
+     GG:::::::::::::::Ga:::::aaaa::::::a m::::m   m::::m   m::::m e::::::::eeeeeeee  
+       GGG::::::GGG:::G a::::::::::aa:::am::::m   m::::m   m::::m  ee:::::::::::::e  
+          GGGGGG   GGGG  aaaaaaaaaa  aaaammmmmm   mmmmmm   mmmmmm    eeeeeeeeeeeeee  
+  
+  */
 
   var mouseMove = function ( e ) {
     mouse.x = ( event.clientX / this.CANVAS_WIDTH ) * 2 - 1;
@@ -216,6 +216,24 @@ G:::::G        G::::G a::::aaaa::::::a m::::m   m::::m   m::::me::::::eeeeeeeeee
     this.camera.updateProjectionMatrix();
   };
 
+  var click = function ( e ) {
+
+    if ( this.mouse.planetIdHovered > -1 ) {
+
+      this.stars.some( function ( planet ) {
+
+        if ( planet.planetId == this.mouse.planetIdHovered ) {
+          planet.onClick.call( planet, e, this );
+          return true;
+        }
+        return false;
+
+      }, this );
+
+    }
+
+  }
+
 
   // vars for mouseMove
   var ray = new THREE.Raycaster();
@@ -233,36 +251,20 @@ G:::::G        G::::G a::::aaaa::::::a m::::m   m::::m   m::::me::::::eeeeeeeeee
     // create an array containing all objects in the scene with which the ray intersects
     this.mouse.intersects = ray.intersectObjects( this.scene.children );
 
-    this.mouse.planetIdHovered = [];
-
-    this.mouse.intersects.forEach( function ( intersection ) {
+    if ( this.mouse.intersects.length < 1 ) {
+      this.mouse.planetIdHovered = -1;
+    }
+    else {
+      var intersection = this.mouse.intersects[0];
       if ( intersection.object.planetId !== undefined ) { // Game.Planet.mesh has a planetId field
-        this.mouse.planetIdHovered.push( intersection.object.planetId );
+        this.mouse.planetIdHovered = intersection.object.planetId;
       }
-    }, this );
-
-
-
-
-    /**********
-     * TEST
-     */
-    if ( this.rayHelper.vOffsets == undefined ) {
-      this.rayHelper.vOffsets = this.rayHelper.geometry.vertices.slice( 3, 6 );
+      else {
+        this.mouse.planetIdHovered = -1;
+      }
     }
 
-    var rayOrigin = ray.ray.origin.clone();
-
-    var step = ray.ray.direction.clone().multiplyScalar( 5 );
-    var newTarget = rayOrigin.add( step );
-    while ( newTarget.z > 0 ) { newTarget.add( step ); }
-
-    this.rayHelper.geometry.vertices[3] = newTarget.clone().add( this.rayHelper.vOffsets[0] );
-    this.rayHelper.geometry.vertices[4] = newTarget.clone().add( this.rayHelper.vOffsets[1] );
-    this.rayHelper.geometry.vertices[5] = newTarget.clone().add( this.rayHelper.vOffsets[2] );
-
-    this.rayHelper.geometry.verticesNeedUpdate = true;
-
+    this.renderer.domElement.style.cursor = this.mouse.planetIdHovered > -1 ? "pointer" : "";
   };
 
   Game.prototype.update = function () {
@@ -291,26 +293,26 @@ G:::::G        G::::G a::::aaaa::::::a m::::m   m::::m   m::::me::::::eeeeeeeeee
 
 
 
-/**********************************************************************************************************
-                                                                                                          
-PPPPPPPPPPPPPPPPP   lllllll                                                                 tttt          
-P::::::::::::::::P  l:::::l                                                              ttt:::t          
-P::::::PPPPPP:::::P l:::::l                                                              t:::::t          
-PP:::::P     P:::::Pl:::::l                                                              t:::::t          
-  P::::P     P:::::P l::::l   aaaaaaaaaaaaa  nnnn  nnnnnnnn        eeeeeeeeeeee    ttttttt:::::ttttttt    
-  P::::P     P:::::P l::::l   a::::::::::::a n:::nn::::::::nn    ee::::::::::::ee  t:::::::::::::::::t    
-  P::::PPPPPP:::::P  l::::l   aaaaaaaaa:::::an::::::::::::::nn  e::::::eeeee:::::eet:::::::::::::::::t    
-  P:::::::::::::PP   l::::l            a::::ann:::::::::::::::ne::::::e     e:::::etttttt:::::::tttttt    
-  P::::PPPPPPPPP     l::::l     aaaaaaa:::::a  n:::::nnnn:::::ne:::::::eeeee::::::e      t:::::t          
-  P::::P             l::::l   aa::::::::::::a  n::::n    n::::ne:::::::::::::::::e       t:::::t          
-  P::::P             l::::l  a::::aaaa::::::a  n::::n    n::::ne::::::eeeeeeeeeee        t:::::t          
-  P::::P             l::::l a::::a    a:::::a  n::::n    n::::ne:::::::e                 t:::::t    tttttt
-PP::::::PP          l::::::la::::a    a:::::a  n::::n    n::::ne::::::::e                t::::::tttt:::::t
-P::::::::P          l::::::la:::::aaaa::::::a  n::::n    n::::n e::::::::eeeeeeee        tt::::::::::::::t
-P::::::::P          l::::::l a::::::::::aa:::a n::::n    n::::n  ee:::::::::::::e          tt:::::::::::tt
-PPPPPPPPPP          llllllll  aaaaaaaaaa  aaaa nnnnnn    nnnnnn    eeeeeeeeeeeeee            ttttttttttt  
-                                                                                                          
-*/
+  /**********************************************************************************************************
+                                                                                                            
+  PPPPPPPPPPPPPPPPP   lllllll                                                                 tttt          
+  P::::::::::::::::P  l:::::l                                                              ttt:::t          
+  P::::::PPPPPP:::::P l:::::l                                                              t:::::t          
+  PP:::::P     P:::::Pl:::::l                                                              t:::::t          
+    P::::P     P:::::P l::::l   aaaaaaaaaaaaa  nnnn  nnnnnnnn        eeeeeeeeeeee    ttttttt:::::ttttttt    
+    P::::P     P:::::P l::::l   a::::::::::::a n:::nn::::::::nn    ee::::::::::::ee  t:::::::::::::::::t    
+    P::::PPPPPP:::::P  l::::l   aaaaaaaaa:::::an::::::::::::::nn  e::::::eeeee:::::eet:::::::::::::::::t    
+    P:::::::::::::PP   l::::l            a::::ann:::::::::::::::ne::::::e     e:::::etttttt:::::::tttttt    
+    P::::PPPPPPPPP     l::::l     aaaaaaa:::::a  n:::::nnnn:::::ne:::::::eeeee::::::e      t:::::t          
+    P::::P             l::::l   aa::::::::::::a  n::::n    n::::ne:::::::::::::::::e       t:::::t          
+    P::::P             l::::l  a::::aaaa::::::a  n::::n    n::::ne::::::eeeeeeeeeee        t:::::t          
+    P::::P             l::::l a::::a    a:::::a  n::::n    n::::ne:::::::e                 t:::::t    tttttt
+  PP::::::PP          l::::::la::::a    a:::::a  n::::n    n::::ne::::::::e                t::::::tttt:::::t
+  P::::::::P          l::::::la:::::aaaa::::::a  n::::n    n::::n e::::::::eeeeeeee        tt::::::::::::::t
+  P::::::::P          l::::::l a::::::::::aa:::a n::::n    n::::n  ee:::::::::::::e          tt:::::::::::tt
+  PPPPPPPPPP          llllllll  aaaaaaaaaa  aaaa nnnnnn    nnnnnn    eeeeeeeeeeeeee            ttttttttttt  
+                                                                                                            
+  */
 
   Game.Planet = function ( param ) {
     param = param || {};
@@ -399,10 +401,14 @@ PPPPPPPPPP          llllllll  aaaaaaaaaa  aaaa nnnnnn    nnnnnn    eeeeeeeeeeeee
     //    transparent: true
     //  }
     //);
-    var mat = new THREE.MeshLambertMaterial( { color: Colors.white, transparent: true, opacity: 0.5, side: THREE.BackSide } );
+    var mat = new THREE.MeshLambertMaterial( { color: Colors.white, transparent: true, opacity: 0.75, side: THREE.BackSide } );
     var geom = new THREE.SphereGeometry( mesh.geometry.radius, 30, 30 );
 
     var glowMesh = new THREE.Mesh( geom, mat );
+    //var glowMesh = mesh.clone();
+    //glowMesh.position = new THREE.Vector3();
+    //glowMesh.material = mat;
+
     glowMesh.scale.x = glowMesh.scale.y = glowMesh.scale.z = 1.5;
     glowMesh.visible = false;
 
@@ -425,20 +431,7 @@ PPPPPPPPPP          llllllll  aaaaaaaaaa  aaaa nnnnnn    nnnnnn    eeeeeeeeeeeee
     this.mesh.rotation.x += this.rsx;
     this.mesh.rotation.y += this.rsy;
 
-    if ( ctx.mouse.planetIdHovered.indexOf( this.planetId ) >= 0 ) {
-      this.mesh.glowMesh.visible = true;
-
-      //this.mouse.intersects.every( function ( o ) {
-      //  if ( o.object.planetId == this.id ) {
-
-      //    return false;
-      //  }
-      //  return true;
-      //} );
-    }
-    else {
-      this.mesh.glowMesh.visible = false;
-    }
+    this.mesh.glowMesh.visible = ctx.mouse.planetIdHovered == this.planetId;
 
     this.links.forEach( function ( link ) { link.update( ctx ); } );
   };
@@ -465,10 +458,47 @@ PPPPPPPPPP          llllllll  aaaaaaaaaa  aaaa nnnnnn    nnnnnn    eeeeeeeeeeeee
     }, this.mesh );
   };
 
-  Game.Planet.prototype.onClick = function ( ctx, e ) {
+  Game.Planet.prototype.onClick = function ( e, ctx ) {
 
-    console.log( "Planet#" + this.id + " onClick( " + game + ", " + e + " );" );
+    this.links.forEach( function ( link ) {
+      ctx.scene.remove( link );
+    } );
 
+    if ( this == ctx.home ) {
+      this.links.forEach( function ( l ) {
+        this.scene.remove( l.mesh );
+      }, ctx );
+      this.links = [];
+    }
+    else {
+      var link = ctx.home.addLinkTo( ctx, this );
+
+      console.log(
+        ctx.home.links,
+        link.target.planetId
+      );
+    }
+  };
+
+  Game.Planet.prototype.addLinkTo = function ( ctx, target ) {
+    if ( !( target instanceof Game.Planet ) ) return;
+
+    var link = new Game.LinkCurves( { source: this.mesh, target: target.mesh, material: target.mesh.material } );
+    this.links.push( link );
+    ctx.scene.add( link.mesh );
+
+    return link;
+  };
+
+  Game.Planet.prototype.removeLink = function ( ctx, link ) {
+    this.links.some( function ( l ) {
+      if ( l == link ) {
+        this.scene.remove( l );
+        return true;
+      }
+      else return false;
+    }, ctx );
+    this.links = [];
   };
 
 
@@ -502,26 +532,26 @@ PPPPPPPPPP          llllllll  aaaaaaaaaa  aaaa nnnnnn    nnnnnn    eeeeeeeeeeeee
 
 
 
-/**********************************************************************************************************
-
-LLLLLLLLLLL               iiii                   kkkkkkkk           
-L:::::::::L              i::::i                  k::::::k           
-L:::::::::L               iiii                   k::::::k           
-LL:::::::LL                                      k::::::k           
-  L:::::L               iiiiiiinnnn  nnnnnnnn     k:::::k    kkkkkkk
-  L:::::L               i:::::in:::nn::::::::nn   k:::::k   k:::::k 
-  L:::::L                i::::in::::::::::::::nn  k:::::k  k:::::k  
-  L:::::L                i::::inn:::::::::::::::n k:::::k k:::::k   
-  L:::::L                i::::i  n:::::nnnn:::::n k::::::k:::::k    
-  L:::::L                i::::i  n::::n    n::::n k:::::::::::k     
-  L:::::L                i::::i  n::::n    n::::n k:::::::::::k     
-  L:::::L         LLLLLL i::::i  n::::n    n::::n k::::::k:::::k    
-LL:::::::LLLLLLLLL:::::Li::::::i n::::n    n::::nk::::::k k:::::k   
-L::::::::::::::::::::::Li::::::i n::::n    n::::nk::::::k  k:::::k  
-L::::::::::::::::::::::Li::::::i n::::n    n::::nk::::::k   k:::::k 
-LLLLLLLLLLLLLLLLLLLLLLLLiiiiiiii nnnnnn    nnnnnnkkkkkkkk    kkkkkkk
-   
-*/
+  /**********************************************************************************************************
+  
+  LLLLLLLLLLL               iiii                   kkkkkkkk           
+  L:::::::::L              i::::i                  k::::::k           
+  L:::::::::L               iiii                   k::::::k           
+  LL:::::::LL                                      k::::::k           
+    L:::::L               iiiiiiinnnn  nnnnnnnn     k:::::k    kkkkkkk
+    L:::::L               i:::::in:::nn::::::::nn   k:::::k   k:::::k 
+    L:::::L                i::::in::::::::::::::nn  k:::::k  k:::::k  
+    L:::::L                i::::inn:::::::::::::::n k:::::k k:::::k   
+    L:::::L                i::::i  n:::::nnnn:::::n k::::::k:::::k    
+    L:::::L                i::::i  n::::n    n::::n k:::::::::::k     
+    L:::::L                i::::i  n::::n    n::::n k:::::::::::k     
+    L:::::L         LLLLLL i::::i  n::::n    n::::n k::::::k:::::k    
+  LL:::::::LLLLLLLLL:::::Li::::::i n::::n    n::::nk::::::k k:::::k   
+  L::::::::::::::::::::::Li::::::i n::::n    n::::nk::::::k  k:::::k  
+  L::::::::::::::::::::::Li::::::i n::::n    n::::nk::::::k   k:::::k 
+  LLLLLLLLLLLLLLLLLLLLLLLLiiiiiiii nnnnnn    nnnnnnkkkkkkkk    kkkkkkk
+     
+  */
 
 
   Game.Link = function ( param ) {
@@ -533,16 +563,7 @@ LLLLLLLLLLLLLLLLLLLLLLLLiiiiiiii nnnnnn    nnnnnnkkkkkkkk    kkkkkkk
   Game.Link.prototype.id = 0;
 
   Game.Link.prototype.update = function ( ctx ) {
-    /*
-    var axis, radians;
-
-    rotObjectMatrix = new THREE.Matrix4();
-    rotObjectMatrix.makeRotationAxis(axis.normalize(), radians);
-
-    this.matrix.multiplySelf(rotObjectMatrix);
-
-    this.rotation.setEulerFromRotationMatrix(this.matrix);
-    */
+    // TODO
   };
 
 
@@ -683,7 +704,7 @@ LLLLLLLLLLLLLLLLLLLLLLLLiiiiiiii nnnnnn    nnnnnnkkkkkkkk    kkkkkkk
 
   this.container.appendChild( this.renderer.domElement );
 
-  this.mouse = { x: 0, y: 0, intersects: [], planetIdHovered: [] };
+  this.mouse = { x: 0, y: 0, intersects: [], planetIdHovered: -1 };
 
   this.scene = new THREE.Scene();
 
@@ -774,6 +795,8 @@ LLLLLLLLLLLLLLLLLLLLLLLLiiiiiiii nnnnnn    nnnnnnkkkkkkkk    kkkkkkk
 
   window.addEventListener( 'mousewheel', mouseWheel.bind( this ) );
 
+  this.container.addEventListener( 'click', click.bind( this ) );
+
   this.container.addEventListener( 'mousemove', mouseMove.bind( this ) );
 
 
@@ -794,43 +817,6 @@ LLLLLLLLLLLLLLLLLLLLLLLLiiiiiiii nnnnnn    nnnnnnkkkkkkkk    kkkkkkk
 
 
 
-
-
-
-  /**************
-   * TEST volumetric curves
-   */
-
-  var target = this.stars[Math.round( random( 1, this.stars.length - 1 ) )].mesh;
-
-  var linkTest = new Game.LinkCurves(
-    {
-      source: this.home.mesh,
-      target: target,
-      material: target.material
-    }
-  );
-
-  this.scene.add( linkTest.mesh );
-
-
-  /**************
-   * TEST ray picking helper
-   */
-
-  this.scene.add(
-    this.rayHelper =
-    new THREE.Mesh(
-      new THREE.TubeGeometry(
-        new THREE.LineCurve( this.camera.position.clone().add( new THREE.Vector3( 0, -20, 0 ) ), this.home.mesh.position ),
-        /*segments*/1, /*radius*/5, /*segments radius*/3, /*closed*/false, /*debug*/true
-      ),
-      Materials.red
-    )
-  );
-  this.rayHelper.visible = false;
-
-  /**************/
 };
 
 
