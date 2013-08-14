@@ -287,7 +287,11 @@ Game = function ( container ) {
 
     this.update();
 
-    this.renderer.render( this.scene, this.camera );
+    if(this.UsePostProcess){
+      this.composer.render();
+    } else {
+      this.renderer.render( this.scene, this.camera );
+    }
 
   };
 
@@ -816,7 +820,35 @@ Game = function ( container ) {
   //this.camera.lookAt( this.scene.position );
 
 
+  /******
+   * postprocessing FXAA -> Copy
+   */
 
+  var parameters = {
+    minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+    format: THREE.RGBFormat, stencilBuffer: false
+  };
+  var renderTarget = new THREE.WebGLRenderTarget( width, height, parameters );
+
+  this.composer = new THREE.EffectComposer( this.renderer, renderTarget );
+
+  this.composer.addPass( new THREE.RenderPass( this.scene, this.camera ) );
+
+  var fxaa = new THREE.ShaderPass( THREE.FXAAShader );
+  fxaa.uniforms['resolution'].value = new THREE.Vector2( 1 / width, 1 / height );
+  this.composer.addPass( fxaa );
+
+  var effect = new THREE.ShaderPass( THREE.CopyShader );
+  effect.renderToScreen = true;
+  this.composer.addPass( effect );
+
+  this.UsePostProcess = true;
+
+  /******
+   * init dat.gui
+   */
+  this.gui = new dat.GUI();
+  this.gui.add( this, "UsePostProcess");
 };
 
 
